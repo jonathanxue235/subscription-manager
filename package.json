@@ -1,0 +1,22 @@
+{
+  "name": "subscription-manager",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jonathanxue235/subscription-manager.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jonathanxue235/subscription-manager/issues"
+  },
+  "homepage": "https://github.com/jonathanxue235/subscription-manager#readme",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.78.0"
+  }
+}

@@ -1,0 +1,9 @@
+import { supabase } from './supabaseClient'
+
+async function testConnection() {
+  const { data, error } = await supabase.from('user_data').select('*').limit(1)
+  if (error) console.error('Supabase connection failed:', error)
+  else console.log('Connected! Sample data:', data)
+}
+
+testConnection()
