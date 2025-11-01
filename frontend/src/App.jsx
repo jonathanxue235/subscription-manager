@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import LoginPage from "./LoginPage";
 
 function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [message, setMessage] = useState('');
+
+  const handleLogin = () => {
+    setIsLoggedIn(true);
+  };
 
   useEffect(() => {
     fetch('http://localhost:5000/api/data') // Adjust URL if backend port differs
@@ -13,10 +19,16 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>React Frontend</h1>
-        <p>{message}</p>
+        <div>
+          {isLoggedIn ? (
+            <h1>Welcome to Your Main Website!</h1>
+          ) : (
+            <LoginPage onLogin={handleLogin} />
+          )}
+        </div>
       </header>
     </div>
+
   );
 }
 
