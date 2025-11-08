@@ -3,14 +3,21 @@ const express = require('express');
     const app = express();
     const port = process.env.PORT || 5000;
 
-    app.use(cors());
-    app.use(express.json()); // For parsing application/json
+    app.use(express.json());
 
-    // Example API endpoint
-    app.get('/api/data', (req, res) => {
-        res.json({ message: 'Data from Node.js backend!' });
+    app.get('/home', (req, res) => {
+        res.send('Welcome to Subscription Manager');
     });
 
-    app.listen(port, () => {
-        console.log(`Server running on port ${port}`);
+    app.get('/login', (req, res) => {
+        res.send('This is the login page');
+    });
+
+    app.post('/login', (req, res) => {
+        console.log(`${req.body.userId} + ${req.body.password}`);
+        res.status(200).send('Login successful')
+    });
+
+    app.all('*', (req, res) => {
+        res.status(404).send('404 - Page Not Found');
     });
