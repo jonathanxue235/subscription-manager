@@ -21,7 +21,7 @@ function App() {
       <header className="App-header">
         <div>
           {isLoggedIn ? (
-            <h1>Welcome to Your Main Website!</h1>
+            <h1>Welcome to Subscription Manager!</h1>
           ) : (
             <LoginPage onLogin={handleLogin} />
           )}
