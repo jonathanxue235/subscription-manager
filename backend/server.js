@@ -1,7 +1,7 @@
 const express = require('express');
     const cors = require('cors');
     const app = express();
-    const port = process.env.PORT || 5000;
+    const port = process.env.PORT || 5050;
 
     app.use(express.json());
 
@@ -18,6 +18,19 @@ const express = require('express');
         res.status(200).send('Login successful')
     });
 
+    app.get('/register', (req, res) => {
+        res.send('This is the registration page.');
+    });
+
+    app.post('/register', (req, res) => {
+        console.log(`This is the new userId ${req.body.userId}`);
+        res.status(200).send('Account created!');
+    });
+
     app.all('*', (req, res) => {
         res.status(404).send('404 - Page Not Found');
+    });
+
+    app.listen(port, () => {
+        console.log(`Server is running on ${port}`);
     });
