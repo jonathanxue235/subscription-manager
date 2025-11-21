@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/jonathanxue235/subscription-manager#readme",
   "dependencies": {
-    "@supabase/supabase-js": "^2.78.0"
+    "@supabase/supabase-js": "^2.78.0",
+    "recharts": "^3.4.1"
   }
 }
