@@ -4,6 +4,7 @@ const express = require('express');
     const port = process.env.PORT || 5050;
 
     app.use(express.json());
+    app.use(cors());
 
     app.get('/home', (req, res) => {
         res.send('Welcome to Subscription Manager');
@@ -27,7 +28,7 @@ const express = require('express');
         res.status(200).send('Account created!');
     });
 
-    app.all('*', (req, res) => {
+    app.use((req, res) => {
         res.status(404).send('404 - Page Not Found');
     });
 
