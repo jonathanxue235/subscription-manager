@@ -1,7 +1,7 @@
 {
   "name": "subscription-manager",
   "version": "1.0.0",
-  "description": "",
+  "description": "![dashboard_design](./main-dashboard-design.png)",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -18,6 +18,8 @@
   "homepage": "https://github.com/jonathanxue235/subscription-manager#readme",
   "dependencies": {
     "@supabase/supabase-js": "^2.78.0",
+    "recharts": "^3.4.1",
     "react-router-dom": "^7.9.6"
+
   }
 }
