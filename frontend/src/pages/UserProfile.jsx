@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
-import "../../common.css";
+import "../common.css";
 
 function UserProfilePage() {
     const [userData, setUserData] = useState(null);
