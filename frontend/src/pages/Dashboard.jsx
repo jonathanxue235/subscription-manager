@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import StatCard from './StatCard';
-import SubscriptionList from './SubscriptionList';
-import { stats, chartData, subscriptions } from '../../data/mockData';
-import './Dashboard.css';
+import StatCard from '../components/StatCard';
+import SubscriptionList from '../components/SubscriptionList';
+import { stats, chartData, subscriptions } from '../data/mockData';
+import '../common.css';
 
-const DashboardLayout = () => {
+const Dashboard = () => {
   const [timeRange, setTimeRange] = useState('6M');
 
   const getFilteredData = () => {
@@ -118,4 +118,4 @@ const DashboardLayout = () => {
   );
 };
 
-export default DashboardLayout;
+export default Dashboard;

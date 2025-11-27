@@ -1,5 +1,5 @@
 import React from 'react';
-import './Dashboard.css';
+import '../common.css';
 
 const StatCard = ({ label, value, subtext }) => {
   return (

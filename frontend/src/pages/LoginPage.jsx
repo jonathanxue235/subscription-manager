@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import "./LoginPage.css";
+import '../common.css';
 
 function LoginPage({ onLogin }) {
   const [email, setEmail] = useState('');
@@ -32,11 +32,11 @@ function LoginPage({ onLogin }) {
         console.error('Login error:', data);
       } else {
         console.log('Login successful:', data);
-        
+
         // Store the JWT token in localStorage
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        
+
         // Call the parent component's login handler
         onLogin(data.user);
       }
@@ -49,30 +49,34 @@ function LoginPage({ onLogin }) {
   }
 
   return (
-    <div className="login-container">
-      <h2>Login</h2>
-      <form onSubmit={handleSubmitCredentials}>
-        <input
-          type="email"
-          value={email}
-          placeholder="Email"
-          onChange={(event) => setEmail(event.target.value)}
-          required
-          disabled={isLoading}
-        />
-        <input
-          type="password"
-          value={password}
-          placeholder="Password"
-          onChange={(event) => setPassword(event.target.value)}
-          required
-          disabled={isLoading}
-        />
-        {error && <p className="error">{error}</p>}
-        <button type="submit" disabled={isLoading}>
-          {isLoading ? 'Logging in...' : 'Login'}
-        </button>
-      </form>
+    <div className="page-container">
+      <div className="auth-card">
+        <h2 className="auth-title">Login</h2>
+        <form className="form" onSubmit={handleSubmitCredentials}>
+          <input
+            type="email"
+            value={email}
+            placeholder="Email"
+            onChange={(event) => setEmail(event.target.value)}
+            required
+            disabled={isLoading}
+            className="input"
+          />
+          <input
+            type="password"
+            value={password}
+            placeholder="Password"
+            onChange={(event) => setPassword(event.target.value)}
+            required
+            disabled={isLoading}
+            className="input"
+          />
+          {error && <p className="error-message">{error}</p>}
+          <button type="submit" disabled={isLoading} className="btn btn-primary btn-full">
+            {isLoading ? 'Logging in...' : 'Login'}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

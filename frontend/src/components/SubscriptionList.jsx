@@ -1,6 +1,6 @@
 import React from 'react';
 import { Trash2 } from 'lucide-react';
-import './Dashboard.css';
+import '../common.css';
 
 const SubscriptionList = ({ subscriptions }) => {
 
@@ -29,7 +29,7 @@ const SubscriptionList = ({ subscriptions }) => {
             <th>Frequency</th>
             <th>Renewal Date</th>
             <th>Cost</th>
-            <th>Remove Subscription</th> {/* Renamed Header */}
+            <th>Remove Subscription</th>
           </tr>
         </thead>
         <tbody>

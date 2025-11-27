@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import "./LoginPage.css"; // Reuse the same CSS
+import './common.css';
 
 function SignupPage({ onSignup, onSwitchToLogin }) {
   const [email, setEmail] = useState('');
@@ -47,11 +47,11 @@ function SignupPage({ onSignup, onSwitchToLogin }) {
         console.error('Registration error:', data);
       } else {
         console.log('Registration successful:', data);
-        
+
         // Store the JWT token in localStorage
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        
+
         // Call the parent component's signup handler
         onSignup(data.user);
       }
@@ -64,53 +64,49 @@ function SignupPage({ onSignup, onSwitchToLogin }) {
   }
 
   return (
-    <div className="login-container">
-      <h2>Sign Up</h2>
-      <form onSubmit={handleSubmitCredentials}>
-        <input
-          type="email"
-          value={email}
-          placeholder="Email"
-          onChange={(event) => setEmail(event.target.value)}
-          required
-          disabled={isLoading}
-        />
-        <input
-          type="password"
-          value={password}
-          placeholder="Password"
-          onChange={(event) => setPassword(event.target.value)}
-          required
-          disabled={isLoading}
-        />
-        <input
-          type="password"
-          value={confirmPassword}
-          placeholder="Confirm Password"
-          onChange={(event) => setConfirmPassword(event.target.value)}
-          required
-          disabled={isLoading}
-        />
-        {error && <p className="error">{error}</p>}
-        <button type="submit" disabled={isLoading}>
-          {isLoading ? 'Creating Account...' : 'Sign Up'}
-        </button>
-      </form>
-      <p style={{ marginTop: '15px', fontSize: '14px' }}>
-        Already have an account?{' '}
-        <button 
-          onClick={onSwitchToLogin}
-          style={{ 
-            background: 'none', 
-            border: 'none', 
-            color: '#007bff', 
-            cursor: 'pointer',
-            textDecoration: 'underline'
-          }}
-        >
-          Login here
-        </button>
-      </p>
+    <div className="page-container">
+      <div className="auth-card">
+        <h2 className="auth-title">Sign Up</h2>
+        <form className="form" onSubmit={handleSubmitCredentials}>
+          <input
+            type="email"
+            value={email}
+            placeholder="Email"
+            onChange={(event) => setEmail(event.target.value)}
+            required
+            disabled={isLoading}
+            className="input"
+          />
+          <input
+            type="password"
+            value={password}
+            placeholder="Password"
+            onChange={(event) => setPassword(event.target.value)}
+            required
+            disabled={isLoading}
+            className="input"
+          />
+          <input
+            type="password"
+            value={confirmPassword}
+            placeholder="Confirm Password"
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            required
+            disabled={isLoading}
+            className="input"
+          />
+          {error && <p className="error-message">{error}</p>}
+          <button type="submit" disabled={isLoading} className="btn btn-primary btn-full">
+            {isLoading ? 'Creating Account...' : 'Sign Up'}
+          </button>
+        </form>
+        <div className="auth-footer">
+          Already have an account?{' '}
+          <button onClick={onSwitchToLogin} className="btn-link">
+            Login here
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
