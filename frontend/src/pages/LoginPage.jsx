@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import '../common.css';
 
-function LoginPage({ onLogin }) {
+function LoginPage() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState("");
@@ -14,7 +16,8 @@ function LoginPage({ onLogin }) {
 
     try {
       // Send login request to your backend
-      const response = await fetch('http://localhost:5000/api/login', {
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001';
+      const response = await fetch(`${backendUrl}/api/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -37,8 +40,8 @@ function LoginPage({ onLogin }) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
 
-        // Call the parent component's login handler
-        onLogin(data.user);
+        // Redirect to dashboard after successful login
+        navigate('/dashboard');
       }
     } catch (err) {
       setError('Unable to connect to server. Please try again.');
@@ -76,6 +79,12 @@ function LoginPage({ onLogin }) {
             {isLoading ? 'Logging in...' : 'Login'}
           </button>
         </form>
+        <div className="auth-footer">
+          Don't have an account?{' '}
+          <button onClick={() => navigate('/signup')} className="btn-link">
+            Sign up here
+          </button>
+        </div>
       </div>
     </div>
   );

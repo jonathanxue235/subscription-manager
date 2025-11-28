@@ -1,5 +1,5 @@
 {
-  "name": "subscription-manager",
+  "name": "ls",
   "version": "1.0.0",
   "description": "![dashboard_design](./main-dashboard-design.png)",
   "main": "index.js",
@@ -20,6 +20,6 @@
     "@supabase/supabase-js": "^2.78.0",
     "recharts": "^3.4.1",
     "react-router-dom": "^7.9.6"
-
-  }
+  },
+  "devDependencies": {}
 }
