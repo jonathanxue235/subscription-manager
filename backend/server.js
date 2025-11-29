@@ -40,6 +40,8 @@ app.use(express.json());
 
 // 1. Create database client
 const dbClient = createDatabaseClient();
+// Expose supabase client alias for legacy code that references `supabase`
+const supabase = dbClient;
 
 // 2. Create repository (depends on database client)
 const userRepository = new UserRepository(dbClient);
