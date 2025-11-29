@@ -1,6 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import authService from '../services/authService';
 import '../common.css';
+
+/**
+ * Login Page - Refactored with Service Layer
+ *
+ * Information Hiding:
+ *   - No fetch calls (uses AuthService)
+ *   - No localStorage (AuthService handles it)
+ *   - No validation logic (AuthService handles it)
+ *   - Just UI and user interaction
+ */
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -11,41 +22,21 @@ function LoginPage() {
 
   async function handleSubmitCredentials(event) {
     event.preventDefault();
-    setError(""); // Clear previous errors
+    setError("");
     setIsLoading(true);
 
     try {
-      // Send login request to your backend
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001';
-      const response = await fetch(`${backendUrl}/api/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email,
-          password: password,
-        }),
-      });
+      // Use AuthService - all business logic hidden!
+      await authService.login(email, password);
 
-      const data = await response.json();
+      console.log('Login successful');
 
-      if (!response.ok) {
-        setError(data.error || 'Login failed');
-        console.error('Login error:', data);
-      } else {
-        console.log('Login successful:', data);
-
-        // Store the JWT token in localStorage
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-
-        // Redirect to dashboard after successful login
-        navigate('/dashboard');
-      }
+      // Navigate to dashboard
+      navigate('/dashboard');
     } catch (err) {
-      setError('Unable to connect to server. Please try again.');
-      console.error('Unexpected error:', err);
+      // AuthService throws user-friendly error messages
+      setError(err.message);
+      console.error('Login error:', err);
     } finally {
       setIsLoading(false);
     }

@@ -1,6 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import authService from '../services/authService';
 import '../common.css';
+
+/**
+ * SignUp Page - Refactored with Service Layer
+ *
+ * Information Hiding:
+ *   - No fetch calls (uses AuthService)
+ *   - No localStorage (AuthService handles it)
+ *   - No validation logic (AuthService handles it)
+ *   - Just UI and user interaction
+ */
 
 function SignupPage() {
   const navigate = useNavigate();
@@ -15,52 +26,25 @@ function SignupPage() {
     setError("");
     setIsLoading(true);
 
-    // Validate passwords match
+    // Client-side validation for password match
     if (password !== confirmPassword) {
       setError("Passwords don't match");
       setIsLoading(false);
       return;
     }
 
-    // Validate password length
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      // Send registration request to backend
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001';
-      const response = await fetch(`${backendUrl}/api/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email,
-          password: password,
-        }),
-      });
+      // Use AuthService - all business logic hidden!
+      await authService.signup(email, password);
 
-      const data = await response.json();
+      console.log('Registration successful');
 
-      if (!response.ok) {
-        setError(data.error || 'Registration failed');
-        console.error('Registration error:', data);
-      } else {
-        console.log('Registration successful:', data);
-
-        // Store the JWT token in localStorage
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-
-        // Redirect to dashboard after successful signup
-        navigate('/dashboard');
-      }
+      // Navigate to dashboard
+      navigate('/dashboard');
     } catch (err) {
-      setError('Unable to connect to server. Please try again.');
-      console.error('Unexpected error:', err);
+      // AuthService throws user-friendly error messages
+      setError(err.message);
+      console.error('Signup error:', err);
     } finally {
       setIsLoading(false);
     }
