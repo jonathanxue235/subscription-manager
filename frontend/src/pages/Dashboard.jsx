@@ -1,12 +1,109 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import StatCard from '../components/StatCard';
 import SubscriptionList from '../components/SubscriptionList';
-import { stats, chartData, subscriptions } from '../data/mockData';
+import AddSubscriptionModal from '../components/AddSubscriptionModal';
+import ProfileDropdown from '../components/ProfileDropdown';
 import '../common.css';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001';
 
 const Dashboard = () => {
   const [timeRange, setTimeRange] = useState('6M');
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [chartData, setChartData] = useState([]);
+  const [stats, setStats] = useState([
+    { label: "Total Monthly Cost", value: "$0.00" },
+    { label: "Active Subscriptions", value: "0" },
+    { label: "Next Renewal", value: "N/A" }
+  ]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const fetchDashboardData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Please log in to view your dashboard');
+        setLoading(false);
+        return;
+      }
+
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+
+      // Fetch all data in parallel
+      const [subscriptionsRes, statsRes, historyRes] = await Promise.all([
+        fetch(`${BACKEND_URL}/api/subscriptions`, { headers }),
+        fetch(`${BACKEND_URL}/api/subscriptions/stats`, { headers }),
+        fetch(`${BACKEND_URL}/api/subscriptions/history`, { headers })
+      ]);
+
+      if (!subscriptionsRes.ok || !statsRes.ok || !historyRes.ok) {
+        throw new Error('Failed to fetch dashboard data');
+      }
+
+      const subscriptionsData = await subscriptionsRes.json();
+      const statsData = await statsRes.json();
+      const historyData = await historyRes.json();
+
+      // Transform subscriptions to match UI format
+      const formattedSubscriptions = subscriptionsData.map(sub => ({
+        id: sub.id,
+        name: sub.name,
+        status: sub.status,
+        frequency: sub.frequency,
+        custom_frequency_days: sub.custom_frequency_days,
+        startDate: sub.start_date,
+        renewalDate: new Date(sub.renewal_date).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        }),
+        cost: `$${parseFloat(sub.cost).toFixed(2)}`,
+        logo: sub.logo || sub.name.charAt(0).toUpperCase()
+      }));
+
+      // Transform stats to match UI format
+      const formattedStats = [
+        {
+          label: "Total Monthly Cost",
+          value: `$${statsData.totalMonthlyCost}`
+        },
+        {
+          label: "Active Subscriptions",
+          value: statsData.activeSubscriptions.toString()
+        },
+        {
+          label: "Next Renewal",
+          value: statsData.nextRenewal
+            ? new Date(statsData.nextRenewal.date).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+              })
+            : 'N/A',
+          subtext: statsData.nextRenewal ? statsData.nextRenewal.name : undefined
+        }
+      ];
+
+      setSubscriptions(formattedSubscriptions);
+      setStats(formattedStats);
+      setChartData(historyData);
+      setLoading(false);
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err);
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
   const getFilteredData = () => {
     const totalPoints = chartData.length;
@@ -19,6 +116,29 @@ const Dashboard = () => {
       default: return chartData.slice(totalPoints - 6);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="dashboard-container">
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <p>Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="dashboard-container">
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', gap: '1rem' }}>
+          <p style={{ color: '#ef4444' }}>Error: {error}</p>
+          <button className="btn-primary" onClick={() => window.location.href = '/login'}>
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard-container">
@@ -52,8 +172,10 @@ const Dashboard = () => {
 
           <div className="header-right">
             {/* Button moved here */}
-            <button className="btn-primary">+ Add Subscription</button>
-            <div className="profile-pic" title="User Profile"></div>
+            <button className="btn-primary" onClick={() => setIsModalOpen(true)}>
+              + Add Subscription
+            </button>
+            <ProfileDropdown />
           </div>
         </header>
 
@@ -111,9 +233,15 @@ const Dashboard = () => {
 
         <section>
           <h2 className="section-title">Subscription History</h2>
-          <SubscriptionList subscriptions={subscriptions} />
+          <SubscriptionList subscriptions={subscriptions} onDelete={fetchDashboardData} />
         </section>
       </main>
+
+      <AddSubscriptionModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={fetchDashboardData}
+      />
     </div>
   );
 };
