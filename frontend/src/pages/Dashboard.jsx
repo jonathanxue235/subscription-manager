@@ -4,6 +4,7 @@ import StatCard from '../components/StatCard';
 import SubscriptionList from '../components/SubscriptionList';
 import AddSubscriptionModal from '../components/AddSubscriptionModal';
 import ProfileDropdown from '../components/ProfileDropdown';
+import ReminderManager from "../components/ReminderManager";
 import '../common.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001';
@@ -171,6 +172,7 @@ const Dashboard = () => {
           </div>
 
           <div className="header-right">
+            <ReminderManager subscriptions={subscriptions} />
             {/* Button moved here */}
             <button className="btn-primary" onClick={() => setIsModalOpen(true)}>
               + Add Subscription
