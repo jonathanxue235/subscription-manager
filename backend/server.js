@@ -13,6 +13,7 @@
 
 const express = require('express');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 
 // Import configuration
 const { getConfig } = require('./config/environment');
@@ -32,6 +33,14 @@ const config = getConfig();
 
 // Middleware
 app.use(cors());
+
+// Simple rate limiter for auth endpoints to mitigate brute-force attacks
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // limit each IP to 10 requests per windowMs
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false // Disable the `X-RateLimit-*` headers
+});
 app.use(express.json());
 
 // =============================================================================
@@ -60,8 +69,9 @@ const authenticateToken = createAuthMiddleware(authService);
 // =============================================================================
 
 // Authentication routes
-app.post('/api/register', (req, res) => authController.register(req, res));
-app.post('/api/login', (req, res) => authController.login(req, res));
+// Apply `authLimiter` to authentication endpoints
+app.post('/api/register', authLimiter, (req, res) => authController.register(req, res));
+app.post('/api/login', authLimiter, (req, res) => authController.login(req, res));
 
 // Protected routes (require authentication)
 app.get('/api/protected', authenticateToken, (req, res) =>
