@@ -34,12 +34,15 @@ class ApiService {
 
   async get(endpoint, token = null) {
     try {
-      const headers = { 'Content-Type': 'application/json' };
+      const headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      };
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      const response = await fetch(this._buildUrl(endpoint), {
         method: 'GET',
         headers,
       });
