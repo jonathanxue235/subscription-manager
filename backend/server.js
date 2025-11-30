@@ -14,6 +14,7 @@
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
 
 // Import configuration
 const { getConfig } = require('./config/environment');
@@ -53,6 +54,9 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+
+// Secure HTTP headers
+app.use(helmet());
 
 // Simple rate limiter for auth endpoints to mitigate brute-force attacks
 const authLimiter = rateLimit({
