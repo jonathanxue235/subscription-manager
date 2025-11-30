@@ -5,12 +5,20 @@
 
 class ApiService {
   constructor() {
-    this.baseUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001';
-  }
+    let base = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001';
+    //Removes Traling Slashes in Base URL to prevent double //
+    this.baseUrl = base.replace(/\/+$/, "");
 
+  }
+  _buildUrl(endpoint) {
+    //removes leading slashes in endpoint to prevent double //
+    const cleanEndpoint = endpoint.replace(/^\/+/, "");
+
+    return `${this.baseUrl}/${cleanEndpoint}`;
+  }
   async post(endpoint, data) {
     try {
-      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      const response = await fetch(this._buildUrl(endpoint), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
