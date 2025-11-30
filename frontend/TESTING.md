@@ -15,7 +15,7 @@ From the `/frontend` directory:
 
 ```bash
 npm install
-
+```
 
 For WSL/Linux users, run the following in Bash to install dependencies for cypress:
 
@@ -24,8 +24,16 @@ sudo apt update
 sudo apt install -y \
   libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libnss3 \
   libxss1 libasound2 libnspr4 xvfb libatk-bridge2.0-0
+```
 
 Windows and Mac users should already have these installed. 
 
+To Run the tests using GUI:
 ```bash
 npm run cypress
+```
+
+To run Headless:
+```bash
+npm run cypress:run
+```
