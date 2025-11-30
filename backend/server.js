@@ -32,7 +32,27 @@ const app = express();
 const config = getConfig();
 
 // Middleware
-app.use(cors());
+// Configure CORS allowed origins via `CORS_ALLOWED` env var (comma-separated)
+// Fallback to localhost for development
+const allowedOrigins = (process.env.CORS_ALLOWED || 'http://localhost:3000')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (e.g., server-to-server or curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('CORS policy: This origin is not allowed'));
+  },
+  optionsSuccessStatus: 200,
+  credentials: true // allow cookies/credentials when using cookie-based auth
+};
+
+app.use(cors(corsOptions));
 
 // Simple rate limiter for auth endpoints to mitigate brute-force attacks
 const authLimiter = rateLimit({
