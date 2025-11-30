@@ -8,6 +8,7 @@ const SubscriptionList = ({ subscriptions, onDelete }) => {
   const [editSubscription, setEditSubscription] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001';
 
@@ -103,8 +104,34 @@ const SubscriptionList = ({ subscriptions, onDelete }) => {
     setError(null);
   };
 
+  const normalizedQuery = (searchTerm || '').trim().toLowerCase();
+  const filteredSubscriptions = (subscriptions || []).filter((sub) => {
+    if (!normalizedQuery) return true;
+    const hay = [sub.name, sub.status, sub.frequency, sub.renewalDate, sub.cost]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    return hay.includes(normalizedQuery);
+  });
+
   return (
     <div className="table-container">
+      <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'flex-end' }}>
+        <input
+          aria-label="Search subscriptions"
+          type="search"
+          placeholder="Search subscriptions..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{
+            padding: '8px 12px',
+            borderRadius: '8px',
+            border: '1px solid #D1D5DB',
+            width: '100%',
+            maxWidth: '320px'
+          }}
+        />
+      </div>
       <table className="sub-table">
         <thead>
           <tr>
@@ -118,7 +145,7 @@ const SubscriptionList = ({ subscriptions, onDelete }) => {
           </tr>
         </thead>
         <tbody>
-          {subscriptions.map((sub) => (
+          {filteredSubscriptions.map((sub) => (
             <tr key={sub.id} onClick={() => handleRowClick(sub)} style={{ cursor: 'pointer' }}>
               <td>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
