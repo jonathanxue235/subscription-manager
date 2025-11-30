@@ -8,6 +8,8 @@ const SubscriptionList = ({ subscriptions, onDelete }) => {
   const [editSubscription, setEditSubscription] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortDirection, setSortDirection] = useState(null); // null | 'asc' | 'desc'
 
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001';
 
@@ -103,8 +105,53 @@ const SubscriptionList = ({ subscriptions, onDelete }) => {
     setError(null);
   };
 
+  const toggleSortDirection = () => setSortDirection((prev) => (prev === null ? 'asc' : prev === 'asc' ? 'desc' : null));
+
+  const normalizedQuery = (searchTerm || '').trim().toLowerCase();
+  const filteredSubscriptions = (subscriptions || []).filter((sub) => {
+    if (!normalizedQuery) return true;
+    const hay = [sub.name, sub.status, sub.frequency, sub.renewalDate, sub.cost]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    return hay.includes(normalizedQuery);
+  });
+
+  const parseCost = (cost) => {
+    if (cost === null || cost === undefined) return 0;
+    if (typeof cost === 'number') return cost;
+    const num = parseFloat(String(cost).replace(/[^0-9.-]+/g, ''));
+    return Number.isFinite(num) ? num : 0;
+  };
+
+  const sortedSubscriptions = filteredSubscriptions.slice();
+  if (sortDirection) {
+    sortedSubscriptions.sort((a, b) => {
+      const ca = parseCost(a.cost);
+      const cb = parseCost(b.cost);
+      if (ca === cb) return 0;
+      return sortDirection === 'asc' ? ca - cb : cb - ca;
+    });
+  }
+
   return (
     <div className="table-container">
+      <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'flex-end' }}>
+        <input
+          aria-label="Search subscriptions"
+          type="search"
+          placeholder="Search subscriptions..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{
+            padding: '8px 12px',
+            borderRadius: '8px',
+            border: '1px solid #D1D5DB',
+            width: '100%',
+            maxWidth: '320px'
+          }}
+        />
+      </div>
       <table className="sub-table">
         <thead>
           <tr>
@@ -113,12 +160,33 @@ const SubscriptionList = ({ subscriptions, onDelete }) => {
             <th>Frequency</th>
             <th>Duration</th>
             <th>Renewal Date</th>
-            <th>Cost</th>
+            <th style={{ whiteSpace: 'nowrap' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                <span>Cost</span>
+                <button
+                  aria-label="Sort by cost"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleSortDirection();
+                  }}
+                  title={sortDirection ? `Sort ${sortDirection === 'asc' ? 'descending' : 'clear'}` : 'Sort ascending'}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    padding: '2px 6px'
+                  }}
+                >
+                  {sortDirection === 'asc' ? '▲' : sortDirection === 'desc' ? '▼' : '⇅'}
+                </button>
+              </div>
+            </th>
             <th>Remove Subscription</th>
           </tr>
         </thead>
         <tbody>
-          {subscriptions.map((sub) => (
+          {sortedSubscriptions.map((sub) => (
             <tr key={sub.id} onClick={() => handleRowClick(sub)} style={{ cursor: 'pointer' }}>
               <td>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
