@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import '../common.css';
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import "../common.css";
 
 const ProfileDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -9,7 +9,7 @@ const ProfileDropdown = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
-  const userEmail = user?.email || '';
+  const userEmail = user?.email || "";
 
   useEffect(() => {
     // Close dropdown when clicking outside
@@ -20,11 +20,11 @@ const ProfileDropdown = () => {
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isOpen]);
 
@@ -33,11 +33,15 @@ const ProfileDropdown = () => {
     logout();
 
     // Redirect to login page
-    navigate('/login');
+    navigate("/login");
+  };
+
+  const goToProfile = () => {
+    navigate("/profile");
   };
 
   const getInitial = () => {
-    if (!userEmail) return 'U';
+    if (!userEmail) return "U";
     return userEmail.charAt(0).toUpperCase();
   };
 
@@ -46,18 +50,22 @@ const ProfileDropdown = () => {
       <div
         className="profile-avatar-btn"
         onClick={() => setIsOpen(!isOpen)}
-        title={userEmail || 'User Profile'}
+        title={userEmail || "User Profile"}
       >
         {getInitial()}
       </div>
 
       {isOpen && (
         <div className="profile-dropdown-menu">
-          <div className="dropdown-item dropdown-email">
-            {userEmail}
-          </div>
+          <div className="dropdown-item dropdown-email">{userEmail}</div>
+          <button className="dropdown-item dropdown-edit-profile" onClick={() => goToProfile()}>
+            Edit Profile
+          </button>
           <div className="dropdown-divider"></div>
-          <button className="dropdown-item dropdown-logout" onClick={handleLogout}>
+          <button
+            className="dropdown-item dropdown-logout"
+            onClick={handleLogout}
+          >
             Logout
           </button>
         </div>
