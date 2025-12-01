@@ -763,6 +763,15 @@ body {
   background-color: transparent;
 }
 
+.dropdown-edit-profile {
+  font-weight: 600;
+}
+
+.dropdown-edit-profile:hover {
+  background-color: rgba(19, 127, 236, 0.1);
+  color: var(--accent-blue);
+}
+
 .dropdown-logout {
   font-weight: 600;
 }
