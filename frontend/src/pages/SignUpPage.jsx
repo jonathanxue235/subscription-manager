@@ -1,20 +1,21 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import authService from '../services/authService';
+import { useAuth } from '../contexts/AuthContext';
 import '../common.css';
 
 /**
- * SignUp Page - Refactored with Service Layer
+ * SignUp Page - Refactored with AuthContext
  *
  * Information Hiding:
- *   - No fetch calls (uses AuthService)
- *   - No localStorage (AuthService handles it)
- *   - No validation logic (AuthService handles it)
+ *   - No fetch calls (uses AuthContext)
+ *   - No localStorage (AuthContext handles it)
+ *   - No validation logic (AuthContext/AuthService handles it)
  *   - Just UI and user interaction
  */
 
 function SignupPage() {
   const navigate = useNavigate();
+  const { signup } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -34,15 +35,15 @@ function SignupPage() {
     }
 
     try {
-      // Use AuthService - all business logic hidden!
-      await authService.signup(email, password);
+      // Use AuthContext signup - all business logic hidden!
+      await signup(email, password);
 
       console.log('Registration successful');
 
       // Navigate to dashboard
       navigate('/dashboard');
     } catch (err) {
-      // AuthService throws user-friendly error messages
+      // AuthContext throws user-friendly error messages
       setError(err.message);
       console.error('Signup error:', err);
     } finally {

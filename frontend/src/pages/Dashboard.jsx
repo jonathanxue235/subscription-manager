@@ -5,6 +5,7 @@ import SubscriptionList from '../components/SubscriptionList';
 import AddSubscriptionModal from '../components/AddSubscriptionModal';
 import ProfileDropdown from '../components/ProfileDropdown';
 import ReminderManager from "../components/ReminderManager";
+import storage from '../utils/storage';
 import '../common.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001';
@@ -24,7 +25,7 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = storage.getToken();
       if (!token) {
         setError('Please log in to view your dashboard');
         setLoading(false);

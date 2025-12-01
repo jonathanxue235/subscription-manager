@@ -1,20 +1,21 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import authService from '../services/authService';
+import { useAuth } from '../contexts/AuthContext';
 import '../common.css';
 
 /**
- * Login Page - Refactored with Service Layer
+ * Login Page - Refactored with AuthContext
  *
  * Information Hiding:
- *   - No fetch calls (uses AuthService)
- *   - No localStorage (AuthService handles it)
- *   - No validation logic (AuthService handles it)
+ *   - No fetch calls (uses AuthContext)
+ *   - No localStorage (AuthContext handles it)
+ *   - No validation logic (AuthContext/AuthService handles it)
  *   - Just UI and user interaction
  */
 
 function LoginPage() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState("");
@@ -26,15 +27,15 @@ function LoginPage() {
     setIsLoading(true);
 
     try {
-      // Use AuthService - all business logic hidden!
-      await authService.login(email, password);
+      // Use AuthContext login - all business logic hidden!
+      await login(email, password);
 
       console.log('Login successful');
 
       // Navigate to dashboard
       navigate('/dashboard');
     } catch (err) {
-      // AuthService throws user-friendly error messages
+      // AuthContext throws user-friendly error messages
       setError(err.message);
       console.error('Login error:', err);
     } finally {

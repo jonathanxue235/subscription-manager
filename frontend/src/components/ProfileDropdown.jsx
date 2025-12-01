@@ -1,25 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import '../common.css';
 
 const ProfileDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [userEmail, setUserEmail] = useState('');
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
-  useEffect(() => {
-    // Get user email from localStorage
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        setUserEmail(user.email || '');
-      } catch (e) {
-        console.error('Error parsing user data:', e);
-      }
-    }
-  }, []);
+  const userEmail = user?.email || '';
 
   useEffect(() => {
     // Close dropdown when clicking outside
@@ -39,9 +29,8 @@ const ProfileDropdown = () => {
   }, [isOpen]);
 
   const handleLogout = () => {
-    // Clear localStorage
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    // Use AuthContext logout (handles clearing localStorage)
+    logout();
 
     // Redirect to login page
     navigate('/login');
