@@ -27,9 +27,13 @@ class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Generate username from email (part before @)
+    const username = email.split('@')[0];
+
     const user = await this.userRepo.create({
       email: email,
       password: hashedPassword,
+      username: username,
       created_at: new Date().toISOString()
     });
 
@@ -86,9 +90,10 @@ class AuthService {
       id: user.id,
       email: user.email,
       username: user.username,
-      budget: user.budget,
-      location: user.location,
-      primary_curr: user.primary_curr,
+      budget: user.budget || null,
+      monthly_budget: user.monthly_budget || 0,
+      location: user.location || null,
+      primary_curr: user.primary_curr || 'USD',
       created_at: user.created_at
     };
   }
