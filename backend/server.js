@@ -22,8 +22,12 @@ const { createDatabaseClient } = require('./config/database');
 
 // Import layers
 const UserRepository = require('./repositories/userRepository');
+const SubscriptionRepository = require('./repositories/subscriptionRepository');
 const AuthService = require('./services/authService');
+const SubscriptionService = require('./services/subscriptionService');
+const BudgetService = require('./services/budgetService');
 const AuthController = require('./controllers/authController');
+const SubscriptionController = require('./controllers/subscriptionController');
 const { createAuthMiddleware } = require('./middleware/authMiddleware');
 
 // Initialize Express app
@@ -73,17 +77,19 @@ app.use(express.json());
 
 // 1. Create database client
 const dbClient = createDatabaseClient();
-// Expose supabase client alias for legacy code that references `supabase`
-const supabase = dbClient;
 
-// 2. Create repository (depends on database client)
+// 2. Create repositories (depend on database client)
 const userRepository = new UserRepository(dbClient);
+const subscriptionRepository = new SubscriptionRepository(dbClient);
 
-// 3. Create service (depends on repository)
+// 3. Create services (depend on repositories)
 const authService = new AuthService(userRepository, config.jwtSecret);
+const subscriptionService = new SubscriptionService(subscriptionRepository);
+const budgetService = new BudgetService(subscriptionService, userRepository);
 
-// 4. Create controller (depends on service)
+// 4. Create controllers (depend on services)
 const authController = new AuthController(authService);
+const subscriptionController = new SubscriptionController(subscriptionService, budgetService);
 
 // 5. Create middleware (depends on service)
 const authenticateToken = createAuthMiddleware(authService);
@@ -124,469 +130,33 @@ app.get('/health', (req, res) => {
 });
 
 // ==================== SUBSCRIPTION ENDPOINTS ====================
-// Helper function to calculate renewal date based on start date and frequency
-const calculateRenewalDate = (startDate, frequency, customFrequencyDays = null) => {
-  // Parse the date as UTC
-  const start = new Date(startDate);
-  // Create a clone to modify
-  const renewal = new Date(start);
-
-  // Use UTC methods to avoid timezone shifts
-  switch (frequency) {
-    case 'Weekly':
-      renewal.setUTCDate(start.getUTCDate() + 7);
-      break;
-    case 'Bi-Weekly':
-      renewal.setUTCDate(start.getUTCDate() + 14);
-      break;
-    case 'Monthly':
-      renewal.setUTCMonth(start.getUTCMonth() + 1);
-      break;
-    case 'Quarterly':
-      renewal.setUTCMonth(start.getUTCMonth() + 3);
-      break;
-    case 'Bi-Annual':
-      renewal.setUTCMonth(start.getUTCMonth() + 6);
-      break;
-    case 'Annual':
-      renewal.setUTCFullYear(start.getUTCFullYear() + 1);
-      break;
-    case 'Custom':
-      if (customFrequencyDays) {
-        renewal.setUTCDate(start.getUTCDate() + parseInt(customFrequencyDays) + 1);
-      }
-      break;
-    default:
-      renewal.setUTCMonth(start.getUTCMonth() + 1); // Default to monthly
-  }
-
-  return renewal.toISOString().split('T')[0];
-};
-
-// Helper function to calculate status based on renewal date
-const calculateStatus = (renewalDate) => {
-  const today = new Date();
-  const renewal = new Date(renewalDate);
-  const daysUntilRenewal = Math.ceil((renewal - today) / (1000 * 60 * 60 * 24));
-
-  if (daysUntilRenewal <= 7 && daysUntilRenewal >= 0) {
-    return 'Expiring Soon';
-  }
-  return 'Active';
-};
-
-// Get all subscriptions for authenticated user
-app.get('/api/subscriptions', authenticateToken, async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('subscriptions')
-      .select('*')
-      .eq('user_id', req.user.userId)
-      .order('renewal_date', { ascending: true });
-
-    if (error) {
-      console.error('Supabase error:', error);
-      return res.status(500).json({ error: 'Failed to fetch subscriptions' });
-    }
-
-    // Automatically update status based on renewal date
-    const subscriptionsWithStatus = (data || []).map(sub => ({
-      ...sub,
-      status: calculateStatus(sub.renewal_date)
-    }));
-
-    res.json(subscriptionsWithStatus);
-  } catch (error) {
-    console.error('Error fetching subscriptions:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// Get dashboard stats
-app.get('/api/subscriptions/stats', authenticateToken, async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('subscriptions')
-      .select('*')
-      .eq('user_id', req.user.userId);
-
-    if (error) {
-      console.error('Supabase error:', error);
-      return res.status(500).json({ error: 'Failed to fetch stats' });
-    }
-
-    // Update status dynamically for each subscription
-    const subscriptions = (data || []).map(sub => ({
-      ...sub,
-      status: calculateStatus(sub.renewal_date)
-    }));
-
-    // Helper function to get days in frequency
-    const getDaysInFrequency = (frequency, customDays) => {
-      switch (frequency) {
-        case 'Weekly': return 7;
-        case 'Bi-Weekly': return 14;
-        case 'Monthly': return 30;
-        case 'Quarterly': return 90;
-        case 'Bi-Annual': return 182;
-        case 'Annual': return 365;
-        case 'Custom': return customDays || 30;
-        default: return 30;
-      }
-    };
-
-    // Calculate total cost for current month by counting actual renewals
-    const today = new Date();
-    const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-    const currentMonthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-
-    const totalMonthlyCost = subscriptions.reduce((sum, sub) => {
-      const cost = parseFloat(sub.cost);
-      const startDate = sub.start_date ? new Date(sub.start_date) : new Date();
-      const frequencyDays = getDaysInFrequency(sub.frequency, sub.custom_frequency_days);
-
-      // Count renewals in current month
-      let renewalCount = 0;
-      let currentRenewalDate = new Date(startDate);
-
-      // Only count if subscription started before month end
-      if (startDate <= currentMonthEnd) {
-        while (currentRenewalDate <= currentMonthEnd) {
-          if (currentRenewalDate >= currentMonthStart && currentRenewalDate <= currentMonthEnd) {
-            renewalCount++;
-          }
-          currentRenewalDate = new Date(currentRenewalDate);
-          currentRenewalDate.setDate(currentRenewalDate.getDate() + frequencyDays);
-        }
-      }
-
-      return sum + (renewalCount * cost);
-    }, 0);
-
-    // Find next renewal
-    const upcomingRenewals = subscriptions
-      .filter(sub => new Date(sub.renewal_date) >= today)
-      .sort((a, b) => new Date(a.renewal_date) - new Date(b.renewal_date));
-
-    const nextRenewal = upcomingRenewals[0];
-
-    const stats = {
-      totalMonthlyCost: totalMonthlyCost.toFixed(2),
-      activeSubscriptions: subscriptions.filter(sub => sub.status === 'Active').length,
-      nextRenewal: nextRenewal ? {
-        date: nextRenewal.renewal_date,
-        name: nextRenewal.name
-      } : null
-    };
-
-    res.json(stats);
-  } catch (error) {
-    console.error('Error fetching stats:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// Get subscription history for chart (calculated from start dates)
-app.get('/api/subscriptions/history', authenticateToken, async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('subscriptions')
-      .select('*')
-      .eq('user_id', req.user.userId);
-
-    if (error) {
-      console.error('Supabase error:', error);
-      return res.status(500).json({ error: 'Failed to fetch subscriptions' });
-    }
-
-    const subscriptions = data || [];
-
-    if (subscriptions.length === 0) {
-      // Return empty array if no subscriptions
-      return res.json([]);
-    }
-
-    // Find the earliest start date to determine how far back to generate data
-    let earliestStartDate = new Date();
-    subscriptions.forEach(sub => {
-      if (sub.start_date) {
-        const startDate = new Date(sub.start_date);
-        if (startDate < earliestStartDate) {
-          earliestStartDate = startDate;
-        }
-      }
-    });
-
-    // Calculate monthly costs based on start dates
-    const monthlyCosts = {};
-    const today = new Date();
-
-    // Generate all months from earliest start date to now
-    const startMonth = new Date(earliestStartDate.getFullYear(), earliestStartDate.getMonth(), 1);
-    const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-
-    let currentDate = new Date(startMonth);
-    while (currentDate <= currentMonth) {
-      const monthKey = currentDate.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
-      monthlyCosts[monthKey] = 0;
-      currentDate.setMonth(currentDate.getMonth() + 1);
-    }
-
-    // Helper function to advance renewal date by frequency
-    const advanceRenewalDate = (date, frequency, customDays) => {
-      const newDate = new Date(date);
-      switch (frequency) {
-        case 'Weekly':
-          newDate.setDate(newDate.getDate() + 7);
-          break;
-        case 'Bi-Weekly':
-          newDate.setDate(newDate.getDate() + 14);
-          break;
-        case 'Monthly':
-          newDate.setMonth(newDate.getMonth() + 1);
-          break;
-        case 'Quarterly':
-          newDate.setMonth(newDate.getMonth() + 3);
-          break;
-        case 'Bi-Annual':
-          newDate.setMonth(newDate.getMonth() + 6);
-          break;
-        case 'Annual':
-          newDate.setFullYear(newDate.getFullYear() + 1);
-          break;
-        case 'Custom':
-          newDate.setDate(newDate.getDate() + (customDays || 30));
-          break;
-        default:
-          newDate.setMonth(newDate.getMonth() + 1);
-      }
-      return newDate;
-    };
-
-    // Calculate costs for each subscription
-    subscriptions.forEach(sub => {
-      const startDate = sub.start_date ? new Date(sub.start_date) : new Date();
-      const cost = parseFloat(sub.cost);
-
-      // For each month, count how many renewals occur
-      Object.keys(monthlyCosts).forEach(monthKey => {
-        const [monthStr, yearStr] = monthKey.split(' ');
-        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const monthIndex = monthNames.indexOf(monthStr);
-        const year = 2000 + parseInt(yearStr);
-
-        // Get first and last day of the month
-        const monthStart = new Date(year, monthIndex, 1);
-        const monthEnd = new Date(year, monthIndex + 1, 0); // Last day of month
-
-        // Only process if subscription started before month end
-        if (startDate <= monthEnd) {
-          let renewalCount = 0;
-          let currentRenewalDate = new Date(startDate);
-
-          // Count renewals that fall within this month
-          while (currentRenewalDate <= monthEnd) {
-            if (currentRenewalDate >= monthStart && currentRenewalDate <= monthEnd) {
-              renewalCount++;
-            }
-            // Move to next renewal date
-            currentRenewalDate = advanceRenewalDate(currentRenewalDate, sub.frequency, sub.custom_frequency_days);
-          }
-
-          // Add the cost for this month (renewalCount * cost)
-          monthlyCosts[monthKey] += renewalCount * cost;
-        }
-      });
-    });
-
-    // Transform to chart format
-    const chartData = Object.entries(monthlyCosts).map(([name, cost]) => ({
-      name,
-      cost: parseFloat(cost.toFixed(2))
-    }));
-
-    res.json(chartData);
-  } catch (error) {
-    console.error('Error fetching history:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// Create new subscription
-app.post('/api/subscriptions', authenticateToken, async (req, res) => {
-  try {
-    const { name, frequency, start_date, cost, logo, custom_frequency_days } = req.body;
-
-    // Validate input
-    if (!name || !frequency || !start_date || !cost) {
-      return res.status(400).json({ error: 'Missing required fields (name, frequency, start_date, cost)' });
-    }
-
-    // Calculate renewal date based on start date and frequency
-    const renewal_date = calculateRenewalDate(start_date, frequency, custom_frequency_days);
-
-    const subscriptionData = {
-      user_id: req.user.userId,
-      name,
-      status: 'Active',
-      frequency,
-      start_date,
-      renewal_date,
-      cost: parseFloat(cost),
-      logo: logo || name.charAt(0).toUpperCase()
-    };
-
-    // Add custom_frequency_days if provided
-    if (custom_frequency_days) {
-      subscriptionData.custom_frequency_days = parseInt(custom_frequency_days);
-    }
-
-    const { data, error } = await supabase
-      .from('subscriptions')
-      .insert([subscriptionData])
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Supabase error:', error);
-      return res.status(500).json({ error: 'Failed to create subscription' });
-    }
-
-    res.status(201).json(data);
-  } catch (error) {
-    console.error('Error creating subscription:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// Update subscription
-app.put('/api/subscriptions/:id', authenticateToken, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { name, frequency, start_date, cost, logo, custom_frequency_days } = req.body;
-
-    // Verify ownership
-    const { data: existing } = await supabase
-      .from('subscriptions')
-      .select('*')
-      .eq('id', id)
-      .eq('user_id', req.user.userId)
-      .single();
-
-    if (!existing) {
-      return res.status(404).json({ error: 'Subscription not found' });
-    }
-
-    const updates = {};
-    if (name !== undefined) updates.name = name;
-    if (frequency !== undefined) updates.frequency = frequency;
-    if (start_date !== undefined) updates.start_date = start_date;
-    if (cost !== undefined) updates.cost = parseFloat(cost);
-    if (logo !== undefined) updates.logo = logo;
-    if (custom_frequency_days !== undefined) updates.custom_frequency_days = parseInt(custom_frequency_days);
-
-    // Recalculate renewal date if frequency or start_date changed
-    const newStartDate = start_date || existing.start_date;
-    const newFrequency = frequency || existing.frequency;
-    const newCustomFrequencyDays = custom_frequency_days || existing.custom_frequency_days;
-
-    if (start_date !== undefined || frequency !== undefined || custom_frequency_days !== undefined) {
-      updates.renewal_date = calculateRenewalDate(newStartDate, newFrequency, newCustomFrequencyDays);
-    }
-
-    const { data, error } = await supabase
-      .from('subscriptions')
-      .update(updates)
-      .eq('id', id)
-      .eq('user_id', req.user.userId)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Supabase error:', error);
-      return res.status(500).json({ error: 'Failed to update subscription' });
-    }
-
-    res.json(data);
-  } catch (error) {
-    console.error('Error updating subscription:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// Delete subscription
-app.delete('/api/subscriptions/:id', authenticateToken, async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    // Verify ownership
-    const { data: existing } = await supabase
-      .from('subscriptions')
-      .select('*')
-      .eq('id', id)
-      .eq('user_id', req.user.userId)
-      .single();
-
-    if (!existing) {
-      return res.status(404).json({ error: 'Subscription not found' });
-    }
-
-    const { error } = await supabase
-      .from('subscriptions')
-      .delete()
-      .eq('id', id)
-      .eq('user_id', req.user.userId);
-
-    if (error) {
-      console.error('Supabase error:', error);
-      return res.status(500).json({ error: 'Failed to delete subscription' });
-    }
-
-    res.json({ message: 'Subscription deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting subscription:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+app.get('/api/subscriptions', authenticateToken, (req, res) => subscriptionController.getAll(req, res));
+app.get('/api/subscriptions/stats', authenticateToken, (req, res) => subscriptionController.getDashboard(req, res));
+app.get('/api/subscriptions/history', authenticateToken, (req, res) => subscriptionController.getHistory(req, res));
+app.post('/api/subscriptions', authenticateToken, (req, res) => subscriptionController.create(req, res));
+app.put('/api/subscriptions/:id', authenticateToken, (req, res) => subscriptionController.update(req, res));
+app.delete('/api/subscriptions/:id', authenticateToken, (req, res) => subscriptionController.delete(req, res));
 
 // Test endpoint
 app.get('/api/data', (req, res) => {
   res.json({ message: 'Backend is connected!' });
 });
 
-// FOR BUDGET
-// get user's budget
+// ==================== BUDGET ENDPOINTS ====================
 app.get('/api/budget', authenticateToken, async (req, res) => {
   try {
-    console.log('Fetching budget for user:', req.user.userId);
-    const { data, error } = await dbClient
-      .from('users')
-      .select('monthly_budget')
-      .eq('id', req.user.userId)
-      .single();
-
-    if (error) {
-      console.error('Supabase error fetching budget:', error);
-      console.error('Error details:', JSON.stringify(error, null, 2));
-      return res.status(500).json({ error: 'Failed to fetch budget', details: error.message });
-    }
-
-    console.log('Budget data retrieved:', data);
-    res.json({ monthlyBudget: data?.monthly_budget || 0 });
+    const status = await budgetService.getBudgetStatus(req.user.userId);
+    res.json({ monthlyBudget: status.budgetLimit || 0 });
   } catch (error) {
     console.error('Error fetching budget:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// update user's budget
 app.put('/api/budget', authenticateToken, async (req, res) => {
   try {
     const { monthlyBudget } = req.body;
-    console.log('Updating budget for user:', req.user.userId, 'to:', monthlyBudget);
 
-    // validate budget
     if (monthlyBudget === undefined || monthlyBudget === null) {
       return res.status(400).json({ error: 'Monthly budget is required' });
     }
@@ -596,28 +166,14 @@ app.put('/api/budget', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Budget must be a non-negative number' });
     }
 
-    const { data, error } = await dbClient
-      .from('users')
-      .update({ monthly_budget: budgetValue })
-      .eq('id', req.user.userId)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Supabase error updating budget:', error);
-      console.error('Error details:', JSON.stringify(error, null, 2));
-      return res.status(500).json({ error: 'Failed to update budget', details: error.message });
-    }
-
-    console.log('Budget updated successfully:', data);
-    res.json({ monthlyBudget: data.monthly_budget });
+    const user = await budgetService.updateBudgetLimit(req.user.userId, budgetValue);
+    res.json({ monthlyBudget: user.monthly_budget });
   } catch (error) {
     console.error('Error updating budget:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// soft limit check
 app.post('/api/budget/check', authenticateToken, async (req, res) => {
   try {
     const { cost, frequency, customFrequencyDays } = req.body;
@@ -626,82 +182,28 @@ app.post('/api/budget/check', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Cost and frequency are required' });
     }
 
-    // user's budget
-    const { data: userData, error: userError } = await dbClient
-      .from('users')
-      .select('monthly_budget')
-      .eq('id', req.user.userId)
-      .single();
+    const result = await budgetService.checkBudgetLimit(req.user.userId, {
+      cost,
+      billing_cycle: frequency.toLowerCase(),
+      custom_frequency_days: customFrequencyDays
+    });
 
-    if (userError) {
-      console.error('Supabase error:', userError);
-      return res.status(500).json({ error: 'Failed to fetch budget' });
-    }
-
-    const monthlyBudget = userData?.monthly_budget || 0;
-
-    // if no budget, set budget
-    if (monthlyBudget === 0) {
+    if (!result.exceedsLimit) {
       return res.json({
         exceedsBudget: false,
-        monthlyBudget: 0,
-        currentMonthlyCost: 0,
-        newMonthlyCost: 0,
+        monthlyBudget: parseFloat(result.budgetLimit || 0),
+        currentMonthlyCost: parseFloat(result.currentTotal || 0),
+        newMonthlyCost: parseFloat(result.newTotal || 0),
         overageAmount: 0
       });
     }
 
-    // get current subscriptions to calculate monthly costs
-    const { data: subscriptions, error: subsError } = await dbClient
-      .from('subscriptions')
-      .select('*')
-      .eq('user_id', req.user.userId);
-
-    if (subsError) {
-      console.error('Supabase error:', subsError);
-      return res.status(500).json({ error: 'Failed to fetch subscriptions' });
-    }
-
-    // convert frequencies to monthly
-    const getMonthlyEquivalent = (cost, frequency, customDays) => {
-      const monthlyCost = parseFloat(cost);
-      switch (frequency) {
-        case 'Weekly': return monthlyCost * 4.33;
-        case 'Bi-Weekly': return monthlyCost * 2.17;
-        case 'Monthly': return monthlyCost;
-        case 'Quarterly': return monthlyCost / 3;
-        case 'Bi-Annual': return monthlyCost / 6;
-        case 'Annual': return monthlyCost / 12;
-        case 'Custom':
-          if (customDays) {
-            const daysPerMonth = 30.44;
-            return monthlyCost * (daysPerMonth / parseInt(customDays));
-          }
-          return monthlyCost;
-        default: return monthlyCost;
-      }
-    };
-
-    // current monthly total cost
-    const currentMonthlyCost = subscriptions.reduce((sum, sub) => {
-      return sum + getMonthlyEquivalent(sub.cost, sub.frequency, sub.custom_frequency_days);
-    }, 0);
-
-    // calculate new monthly cost with the proposed subscription
-    const newSubscriptionMonthlyCost = getMonthlyEquivalent(cost, frequency, customFrequencyDays);
-    const newMonthlyCost = currentMonthlyCost + newSubscriptionMonthlyCost;
-
-    // check if it exceeds budget
-    const exceedsBudget = newMonthlyCost > monthlyBudget;
-    const overageAmount = exceedsBudget ? newMonthlyCost - monthlyBudget : 0;
-
     res.json({
-      exceedsBudget,
-      monthlyBudget: parseFloat(monthlyBudget.toFixed(2)),
-      currentMonthlyCost: parseFloat(currentMonthlyCost.toFixed(2)),
-      newMonthlyCost: parseFloat(newMonthlyCost.toFixed(2)),
-      overageAmount: parseFloat(overageAmount.toFixed(2)),
-      newSubscriptionMonthlyCost: parseFloat(newSubscriptionMonthlyCost.toFixed(2))
+      exceedsBudget: true,
+      monthlyBudget: parseFloat(result.budgetLimit),
+      currentMonthlyCost: parseFloat(result.currentTotal),
+      newMonthlyCost: parseFloat(result.newTotal),
+      overageAmount: parseFloat((result.newTotal - result.budgetLimit).toFixed(2))
     });
   } catch (error) {
     console.error('Error checking budget:', error);
