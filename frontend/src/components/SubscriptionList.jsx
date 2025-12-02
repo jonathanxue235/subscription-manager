@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import EditSubscriptionModal from './EditSubscriptionModal';
 import '../common.css';
+import cancellationLinks from '../data/cancellationLinks';
 // Load all PNG icons from the `data` folder so we can select one by subscription name.
 const icons = {};
 function importAll(r) {
@@ -299,9 +300,34 @@ const SubscriptionList = ({ subscriptions, onDelete }) => {
               </div>
             )}
 
-            <p style={{ margin: 0, marginBottom: '20px', color: '#6B7280', fontSize: '14px' }}>
+            <p style={{ margin: 0, marginBottom: '12px', color: '#6B7280', fontSize: '14px' }}>
               Are you sure you want to delete <strong>{confirmDelete.name}</strong>? This action cannot be undone.
             </p>
+
+            {(() => {
+              if (!confirmDelete || !confirmDelete.name) return null;
+              const raw = String(confirmDelete.name);
+              const normalized = raw.toLowerCase().replace(/[^a-z0-9]/g, '');
+              // find best match in cancellationLinks by substring, prefer longest match
+              const keys = Object.keys(cancellationLinks || {});
+              const matches = keys.filter((k) => {
+                if (!k) return false;
+                return normalized.includes(k) || k.includes(normalized);
+              });
+              if (matches.length === 0) return null;
+              matches.sort((a, b) => b.length - a.length);
+              const best = matches[0];
+              const url = cancellationLinks[best];
+              if (!url) return null;
+
+              return (
+                <p style={{ marginTop: 0, marginBottom: '12px', fontSize: '13px' }}>
+                  You can cancel directly at{' '}
+                  <a href={url} target="_blank" rel="noopener noreferrer">{new URL(url).hostname.replace('www.', '')}</a>
+                  {'.'}
+                </p>
+              );
+            })()}
 
             <div style={{
               display: 'flex',
