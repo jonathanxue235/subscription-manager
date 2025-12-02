@@ -134,26 +134,22 @@ const calculateRenewalDate = (startDate, frequency, customFrequencyDays = null) 
   // Use UTC methods to avoid timezone shifts
   switch (frequency) {
     case 'Weekly':
-      renewal.setUTCDate(start.getUTCDate() + 8);
+      renewal.setUTCDate(start.getUTCDate() + 7);
       break;
     case 'Bi-Weekly':
-      renewal.setUTCDate(start.getUTCDate() + 15);
+      renewal.setUTCDate(start.getUTCDate() + 14);
       break;
     case 'Monthly':
       renewal.setUTCMonth(start.getUTCMonth() + 1);
-      renewal.setUTCDate(start.getUTCDate() + 1);
       break;
     case 'Quarterly':
       renewal.setUTCMonth(start.getUTCMonth() + 3);
-      renewal.setUTCDate(start.getUTCDate() + 1);
       break;
     case 'Bi-Annual':
       renewal.setUTCMonth(start.getUTCMonth() + 6);
-      renewal.setUTCDate(start.getUTCDate() + 1);
       break;
     case 'Annual':
       renewal.setUTCFullYear(start.getUTCFullYear() + 1);
-      renewal.setUTCDate(start.getUTCDate() + 1);
       break;
     case 'Custom':
       if (customFrequencyDays) {
@@ -162,7 +158,6 @@ const calculateRenewalDate = (startDate, frequency, customFrequencyDays = null) 
       break;
     default:
       renewal.setUTCMonth(start.getUTCMonth() + 1); // Default to monthly
-      renewal.setUTCDate(start.getUTCDate() + 1);
   }
 
   return renewal.toISOString().split('T')[0];
@@ -337,25 +332,41 @@ app.get('/api/subscriptions/history', authenticateToken, async (req, res) => {
       currentDate.setMonth(currentDate.getMonth() + 1);
     }
 
-    // Helper function to get days in frequency
-    const getDaysInFrequency = (frequency, customDays) => {
+    // Helper function to advance renewal date by frequency
+    const advanceRenewalDate = (date, frequency, customDays) => {
+      const newDate = new Date(date);
       switch (frequency) {
-        case 'Weekly': return 7;
-        case 'Bi-Weekly': return 14;
-        case 'Monthly': return 30; // Approximate for calculation
-        case 'Quarterly': return 90;
-        case 'Bi-Annual': return 182;
-        case 'Annual': return 365;
-        case 'Custom': return customDays || 30;
-        default: return 30;
+        case 'Weekly':
+          newDate.setDate(newDate.getDate() + 7);
+          break;
+        case 'Bi-Weekly':
+          newDate.setDate(newDate.getDate() + 14);
+          break;
+        case 'Monthly':
+          newDate.setMonth(newDate.getMonth() + 1);
+          break;
+        case 'Quarterly':
+          newDate.setMonth(newDate.getMonth() + 3);
+          break;
+        case 'Bi-Annual':
+          newDate.setMonth(newDate.getMonth() + 6);
+          break;
+        case 'Annual':
+          newDate.setFullYear(newDate.getFullYear() + 1);
+          break;
+        case 'Custom':
+          newDate.setDate(newDate.getDate() + (customDays || 30));
+          break;
+        default:
+          newDate.setMonth(newDate.getMonth() + 1);
       }
+      return newDate;
     };
 
     // Calculate costs for each subscription
     subscriptions.forEach(sub => {
       const startDate = sub.start_date ? new Date(sub.start_date) : new Date();
       const cost = parseFloat(sub.cost);
-      const frequencyDays = getDaysInFrequency(sub.frequency, sub.custom_frequency_days);
 
       // For each month, count how many renewals occur
       Object.keys(monthlyCosts).forEach(monthKey => {
@@ -380,8 +391,7 @@ app.get('/api/subscriptions/history', authenticateToken, async (req, res) => {
               renewalCount++;
             }
             // Move to next renewal date
-            currentRenewalDate = new Date(currentRenewalDate);
-            currentRenewalDate.setDate(currentRenewalDate.getDate() + frequencyDays);
+            currentRenewalDate = advanceRenewalDate(currentRenewalDate, sub.frequency, sub.custom_frequency_days);
           }
 
           // Add the cost for this month (renewalCount * cost)
