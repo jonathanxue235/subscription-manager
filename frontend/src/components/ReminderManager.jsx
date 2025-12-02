@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import "./ReminderManager.css";
+import "../common.css";
 
 const ReminderManager = ({ subscriptions }) => {
   const [reminders, setReminders] = useState([]);
