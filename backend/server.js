@@ -102,6 +102,22 @@ app.get('/api/protected', authenticateToken, (req, res) =>
   authController.getProtectedData(req, res)
 );
 
+// Get current user data
+app.get('/api/user', authenticateToken, async (req, res) => {
+  try {
+    const user = await userRepository.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    // Remove password from response
+    const { password, ...userWithoutPassword } = user;
+    res.json(userWithoutPassword);
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });

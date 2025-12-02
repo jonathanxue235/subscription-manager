@@ -84,7 +84,12 @@ class AuthService {
   _sanitizeUser(user) {
     return {
       id: user.id,
-      email: user.email
+      email: user.email,
+      username: user.username,
+      budget: user.budget,
+      location: user.location,
+      primary_curr: user.primary_curr,
+      created_at: user.created_at
     };
   }
 }

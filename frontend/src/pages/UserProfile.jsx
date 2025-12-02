@@ -1,18 +1,40 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import "../common.css";
 
 function UserProfilePage() {
   const navigate = useNavigate();
-  const { user, logout, loading } = useAuth();
+  const { user, logout, loading, refreshUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [editedEmail, setEditedEmail] = useState("");
+  const [editedUsername, setEditedUsername] = useState("");
+  const [editedBudget, setEditedBudget] = useState("");
+  const [editedLocation, setEditedLocation] = useState("");
+  const [editedPrimaryCurr, setEditedPrimaryCurr] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
+
+  // Refresh user data when component mounts
+  useEffect(() => {
+    const loadUserData = async () => {
+      if (user) {
+        try {
+          await refreshUser();
+        } catch (error) {
+          console.error('Failed to refresh user data:', error);
+        }
+      }
+    };
+    loadUserData();
+  }, []);
 
   const handleEdit = () => {
     if (!isEditing) {
       setEditedEmail(user?.email || "");
+      setEditedUsername(user?.username || "");
+      setEditedBudget(user?.budget || "");
+      setEditedLocation(user?.location || "");
+      setEditedPrimaryCurr(user?.primary_curr || "");
     }
     setIsEditing(!isEditing);
     setSaveMessage("");
@@ -28,6 +50,10 @@ function UserProfilePage() {
   const handleCancel = () => {
     setIsEditing(false);
     setEditedEmail(user?.email || "");
+    setEditedUsername(user?.username || "");
+    setEditedBudget(user?.budget || "");
+    setEditedLocation(user?.location || "");
+    setEditedPrimaryCurr(user?.primary_curr || "");
     setSaveMessage("");
   };
 
@@ -37,8 +63,9 @@ function UserProfilePage() {
   };
 
   const getInitial = () => {
-    if (!user?.email) return "U";
-    return user.email.charAt(0).toUpperCase();
+    if (user?.username) return user.username.charAt(0).toUpperCase();
+    if (user?.email) return user.email.charAt(0).toUpperCase();
+    return "U";
   };
 
   if (loading) {
@@ -106,6 +133,66 @@ function UserProfilePage() {
               />
             ) : (
               <span className="info-value">{user?.email || "N/A"}</span>
+            )}
+          </div>
+
+          <div className="info-row">
+            <span className="info-label">Username</span>
+            {isEditing ? (
+              <input
+                type="text"
+                className="input"
+                value={editedUsername}
+                onChange={(e) => setEditedUsername(e.target.value)}
+                style={{ maxWidth: "300px" }}
+              />
+            ) : (
+              <span className="info-value">{user?.username || "N/A"}</span>
+            )}
+          </div>
+
+          <div className="info-row">
+            <span className="info-label">Budget</span>
+            {isEditing ? (
+              <input
+                type="number"
+                className="input"
+                value={editedBudget}
+                onChange={(e) => setEditedBudget(e.target.value)}
+                style={{ maxWidth: "300px" }}
+              />
+            ) : (
+              <span className="info-value">{user?.budget || "N/A"}</span>
+            )}
+          </div>
+
+          <div className="info-row">
+            <span className="info-label">Location</span>
+            {isEditing ? (
+              <input
+                type="text"
+                className="input"
+                value={editedLocation}
+                onChange={(e) => setEditedLocation(e.target.value)}
+                style={{ maxWidth: "300px" }}
+              />
+            ) : (
+              <span className="info-value">{user?.location || "N/A"}</span>
+            )}
+          </div>
+
+          <div className="info-row">
+            <span className="info-label">Primary Currency</span>
+            {isEditing ? (
+              <input
+                type="text"
+                className="input"
+                value={editedPrimaryCurr}
+                onChange={(e) => setEditedPrimaryCurr(e.target.value)}
+                style={{ maxWidth: "300px" }}
+              />
+            ) : (
+              <span className="info-value">{user?.primary_curr || "N/A"}</span>
             )}
           </div>
 

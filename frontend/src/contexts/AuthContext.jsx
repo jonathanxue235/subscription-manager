@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import authService from '../services/authService';
 import storage from '../utils/storage';
+import api from '../services/api';
 
 /**
  * AuthContext - Centralized authentication state management
@@ -56,12 +57,29 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const refreshUser = async () => {
+    try {
+      const token = storage.getToken();
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      const userData = await api.get('/api/user', token);
+      setUser(userData);
+      storage.setUser(userData);
+      return userData;
+    } catch (error) {
+      console.error('Error refreshing user data:', error);
+      throw error;
+    }
+  };
+
   const value = {
     user,
     isAuthenticated: !!user,
     login,
     signup,
     logout,
+    refreshUser,
     loading
   };
 
