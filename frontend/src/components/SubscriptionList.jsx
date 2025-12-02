@@ -2,6 +2,20 @@ import React, { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import EditSubscriptionModal from './EditSubscriptionModal';
 import '../common.css';
+// Load all PNG icons from the `data` folder so we can select one by subscription name.
+const icons = {};
+function importAll(r) {
+  r.keys().forEach((key) => {
+    const name = key.replace('./', '').replace(/\.png$/, '');
+    const norm = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    icons[norm] = r(key);
+  });
+}
+try {
+  importAll(require.context('../data', false, /\.png$/));
+} catch (e) {
+  // require.context may not exist in some environments (tests). Safely ignore.
+}
 
 const SubscriptionList = ({ subscriptions, onDelete }) => {
   const [confirmDelete, setConfirmDelete] = useState(null);
@@ -190,7 +204,39 @@ const SubscriptionList = ({ subscriptions, onDelete }) => {
             <tr key={sub.id} onClick={() => handleRowClick(sub)} style={{ cursor: 'pointer' }}>
               <td>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div className="logo-circle">{sub.logo}</div>
+                  <div className="logo-circle">
+                    {(() => {
+                      const raw = sub && sub.name ? String(sub.name) : '';
+                      const normalizedSub = raw.toLowerCase().replace(/[^a-z0-9]/g, '');
+                      let src = null;
+
+                      if (normalizedSub) {
+                        // Find any icon key that appears inside the subscription name
+                        const candidates = Object.keys(icons || {}).filter((k) => {
+                          if (!k) return false;
+                          return normalizedSub.includes(k) || k.includes(normalizedSub);
+                        });
+
+                        if (candidates.length > 0) {
+                          // Prefer the longest match (more specific)
+                          candidates.sort((a, b) => b.length - a.length);
+                          src = icons[candidates[0]];
+                        }
+                      }
+
+                      if (src) {
+                        return (
+                          <img
+                            src={src}
+                            alt={`${sub.name} logo`}
+                            style={{ width: 32, height: 32, borderRadius: '50%' }}
+                          />
+                        );
+                      }
+
+                      return sub.logo;
+                    })()}
+                  </div>
                   {sub.name}
                 </div>
               </td>
