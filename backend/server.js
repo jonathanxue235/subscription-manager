@@ -124,38 +124,45 @@ app.get('/health', (req, res) => {
 });
 
 // ==================== SUBSCRIPTION ENDPOINTS ====================
-
 // Helper function to calculate renewal date based on start date and frequency
 const calculateRenewalDate = (startDate, frequency, customFrequencyDays = null) => {
+  // Parse the date as UTC
   const start = new Date(startDate);
+  // Create a clone to modify
   const renewal = new Date(start);
 
+  // Use UTC methods to avoid timezone shifts
   switch (frequency) {
     case 'Weekly':
-      renewal.setDate(start.getDate() + 7);
+      renewal.setUTCDate(start.getUTCDate() + 8);
       break;
     case 'Bi-Weekly':
-      renewal.setDate(start.getDate() + 14);
+      renewal.setUTCDate(start.getUTCDate() + 15);
       break;
     case 'Monthly':
-      renewal.setMonth(start.getMonth() + 1);
+      renewal.setUTCMonth(start.getUTCMonth() + 1);
+      renewal.setUTCDate(start.getUTCDate() + 1);
       break;
     case 'Quarterly':
-      renewal.setMonth(start.getMonth() + 3);
+      renewal.setUTCMonth(start.getUTCMonth() + 3);
+      renewal.setUTCDate(start.getUTCDate() + 1);
       break;
     case 'Bi-Annual':
-      renewal.setMonth(start.getMonth() + 6);
+      renewal.setUTCMonth(start.getUTCMonth() + 6);
+      renewal.setUTCDate(start.getUTCDate() + 1);
       break;
     case 'Annual':
-      renewal.setFullYear(start.getFullYear() + 1);
+      renewal.setUTCFullYear(start.getUTCFullYear() + 1);
+      renewal.setUTCDate(start.getUTCDate() + 1);
       break;
     case 'Custom':
       if (customFrequencyDays) {
-        renewal.setDate(start.getDate() + parseInt(customFrequencyDays));
+        renewal.setUTCDate(start.getUTCDate() + parseInt(customFrequencyDays) + 1);
       }
       break;
     default:
-      renewal.setMonth(start.getMonth() + 1); // Default to monthly
+      renewal.setUTCMonth(start.getUTCMonth() + 1); // Default to monthly
+      renewal.setUTCDate(start.getUTCDate() + 1);
   }
 
   return renewal.toISOString().split('T')[0];
@@ -354,7 +361,7 @@ app.get('/api/subscriptions/history', authenticateToken, async (req, res) => {
       Object.keys(monthlyCosts).forEach(monthKey => {
         const [monthStr, yearStr] = monthKey.split(' ');
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                           'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const monthIndex = monthNames.indexOf(monthStr);
         const year = 2000 + parseInt(yearStr);
 
@@ -649,7 +656,7 @@ app.post('/api/budget/check', authenticateToken, async (req, res) => {
     const getMonthlyEquivalent = (cost, frequency, customDays) => {
       const monthlyCost = parseFloat(cost);
       switch (frequency) {
-        case 'Weekly': return monthlyCost * 4.33; 
+        case 'Weekly': return monthlyCost * 4.33;
         case 'Bi-Weekly': return monthlyCost * 2.17;
         case 'Monthly': return monthlyCost;
         case 'Quarterly': return monthlyCost / 3;
@@ -657,7 +664,7 @@ app.post('/api/budget/check', authenticateToken, async (req, res) => {
         case 'Annual': return monthlyCost / 12;
         case 'Custom':
           if (customDays) {
-            const daysPerMonth = 30.44; 
+            const daysPerMonth = 30.44;
             return monthlyCost * (daysPerMonth / parseInt(customDays));
           }
           return monthlyCost;
