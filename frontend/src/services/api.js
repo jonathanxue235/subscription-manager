@@ -16,13 +16,18 @@ class ApiService {
 
     return `${this.baseUrl}/${cleanEndpoint}`;
   }
-  async post(endpoint, data) {
+  async post(endpoint, data, token = null) {
     try {
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch(this._buildUrl(endpoint), {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(data),
       });
 
@@ -45,6 +50,27 @@ class ApiService {
       const response = await fetch(this._buildUrl(endpoint), {
         method: 'GET',
         headers,
+      });
+
+      return await this._handleResponse(response);
+    } catch (error) {
+      throw new Error(`Network error: ${error.message}`);
+    }
+  }
+
+  async put(endpoint, data, token = null) {
+    try {
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(this._buildUrl(endpoint), {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(data),
       });
 
       return await this._handleResponse(response);

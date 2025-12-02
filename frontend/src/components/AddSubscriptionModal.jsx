@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import '../common.css';
+import budgetService from '../services/budgetService';
 
 const AddSubscriptionModal = ({ isOpen, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -11,6 +12,8 @@ const AddSubscriptionModal = ({ isOpen, onClose, onSuccess }) => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showBudgetConfirm, setShowBudgetConfirm] = useState(false);
+  const [budgetOverage, setBudgetOverage] = useState(0);
 
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001';
 
@@ -34,7 +37,38 @@ const AddSubscriptionModal = ({ isOpen, onClose, onSuccess }) => {
         return;
       }
 
-      // Prepare submission data
+      // check budget before creating subscription
+      try {
+        const budgetCheck = await budgetService.checkBudget(
+          formData.cost,
+          formData.frequency,
+          formData.custom_frequency_days || null
+        );
+
+        // if budget is exceeded, show confirmation dialog
+        if (budgetCheck.exceedsBudget) {
+          setBudgetOverage(budgetCheck.overageAmount);
+          setShowBudgetConfirm(true);
+          setLoading(false);
+          return;
+        }
+      } catch (budgetErr) {
+        console.error('Error checking budget:', budgetErr);
+        // don't block subscription creation if budget check fails
+      }
+
+      // proceed with creating the subscription
+      await createSubscription(token);
+    } catch (err) {
+      console.error('Error adding subscription:', err);
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
+  const createSubscription = async (token) => {
+    try {
+      // prepare submission data
       const submissionData = {
         name: formData.name,
         frequency: formData.frequency,
@@ -75,12 +109,26 @@ const AddSubscriptionModal = ({ isOpen, onClose, onSuccess }) => {
 
       // Close modal
       onClose();
+      setShowBudgetConfirm(false);
+      setBudgetOverage(0);
     } catch (err) {
-      console.error('Error adding subscription:', err);
+      console.error('Error creating subscription:', err);
       setError(err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleBudgetConfirm = async () => {
+    setShowBudgetConfirm(false);
+    setLoading(true);
+    const token = localStorage.getItem('token');
+    await createSubscription(token);
+  };
+
+  const handleBudgetCancel = () => {
+    setShowBudgetConfirm(false);
+    setBudgetOverage(0);
   };
 
   if (!isOpen) return null;
@@ -327,6 +375,108 @@ const AddSubscriptionModal = ({ isOpen, onClose, onSuccess }) => {
           </div>
         </form>
       </div>
+
+      {/* budget confirmation dialog */}
+      {showBudgetConfirm && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1100
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '24px',
+            width: '90%',
+            maxWidth: '400px',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              marginBottom: '16px',
+              gap: '12px'
+            }}>
+              <div style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '50%',
+                backgroundColor: '#FEF3C7',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '24px'
+              }}>
+                ⚠️
+              </div>
+              <h3 style={{
+                margin: 0,
+                fontSize: '18px',
+                fontWeight: '600',
+                color: '#111827'
+              }}>
+                Budget Exceeded
+              </h3>
+            </div>
+
+            <p style={{
+              margin: '0 0 24px 0',
+              fontSize: '14px',
+              color: '#6B7280',
+              lineHeight: '1.5'
+            }}>
+              You're over your budget by{' '}
+              <span style={{
+                fontWeight: '600',
+                color: '#DC2626'
+              }}>
+                ${budgetOverage.toFixed(2)}
+              </span>
+              . Do you want to proceed with adding this subscription?
+            </p>
+
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'flex-end'
+            }}>
+              <button
+                onClick={handleBudgetCancel}
+                style={{
+                  padding: '10px 20px',
+                  border: '1px solid #D1D5DB',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  backgroundColor: 'white',
+                  color: '#374151'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBudgetConfirm}
+                disabled={loading}
+                className="btn-primary"
+                style={{
+                  padding: '10px 20px',
+                  opacity: loading ? 0.6 : 1
+                }}
+              >
+                {loading ? 'Adding...' : 'Yes, Add Subscription'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

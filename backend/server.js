@@ -538,6 +538,160 @@ app.get('/api/data', (req, res) => {
   res.json({ message: 'Backend is connected!' });
 });
 
+// FOR BUDGET
+// get user's budget
+app.get('/api/budget', authenticateToken, async (req, res) => {
+  try {
+    console.log('Fetching budget for user:', req.user.userId);
+    const { data, error } = await dbClient
+      .from('users')
+      .select('monthly_budget')
+      .eq('id', req.user.userId)
+      .single();
+
+    if (error) {
+      console.error('Supabase error fetching budget:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      return res.status(500).json({ error: 'Failed to fetch budget', details: error.message });
+    }
+
+    console.log('Budget data retrieved:', data);
+    res.json({ monthlyBudget: data?.monthly_budget || 0 });
+  } catch (error) {
+    console.error('Error fetching budget:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// update user's budget
+app.put('/api/budget', authenticateToken, async (req, res) => {
+  try {
+    const { monthlyBudget } = req.body;
+    console.log('Updating budget for user:', req.user.userId, 'to:', monthlyBudget);
+
+    // validate budget
+    if (monthlyBudget === undefined || monthlyBudget === null) {
+      return res.status(400).json({ error: 'Monthly budget is required' });
+    }
+
+    const budgetValue = parseFloat(monthlyBudget);
+    if (isNaN(budgetValue) || budgetValue < 0) {
+      return res.status(400).json({ error: 'Budget must be a non-negative number' });
+    }
+
+    const { data, error } = await dbClient
+      .from('users')
+      .update({ monthly_budget: budgetValue })
+      .eq('id', req.user.userId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Supabase error updating budget:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      return res.status(500).json({ error: 'Failed to update budget', details: error.message });
+    }
+
+    console.log('Budget updated successfully:', data);
+    res.json({ monthlyBudget: data.monthly_budget });
+  } catch (error) {
+    console.error('Error updating budget:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// soft limit check
+app.post('/api/budget/check', authenticateToken, async (req, res) => {
+  try {
+    const { cost, frequency, customFrequencyDays } = req.body;
+
+    if (!cost || !frequency) {
+      return res.status(400).json({ error: 'Cost and frequency are required' });
+    }
+
+    // user's budget
+    const { data: userData, error: userError } = await dbClient
+      .from('users')
+      .select('monthly_budget')
+      .eq('id', req.user.userId)
+      .single();
+
+    if (userError) {
+      console.error('Supabase error:', userError);
+      return res.status(500).json({ error: 'Failed to fetch budget' });
+    }
+
+    const monthlyBudget = userData?.monthly_budget || 0;
+
+    // if no budget, set budget
+    if (monthlyBudget === 0) {
+      return res.json({
+        exceedsBudget: false,
+        monthlyBudget: 0,
+        currentMonthlyCost: 0,
+        newMonthlyCost: 0,
+        overageAmount: 0
+      });
+    }
+
+    // get current subscriptions to calculate monthly costs
+    const { data: subscriptions, error: subsError } = await dbClient
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', req.user.userId);
+
+    if (subsError) {
+      console.error('Supabase error:', subsError);
+      return res.status(500).json({ error: 'Failed to fetch subscriptions' });
+    }
+
+    // convert frequencies to monthly
+    const getMonthlyEquivalent = (cost, frequency, customDays) => {
+      const monthlyCost = parseFloat(cost);
+      switch (frequency) {
+        case 'Weekly': return monthlyCost * 4.33; 
+        case 'Bi-Weekly': return monthlyCost * 2.17;
+        case 'Monthly': return monthlyCost;
+        case 'Quarterly': return monthlyCost / 3;
+        case 'Bi-Annual': return monthlyCost / 6;
+        case 'Annual': return monthlyCost / 12;
+        case 'Custom':
+          if (customDays) {
+            const daysPerMonth = 30.44; 
+            return monthlyCost * (daysPerMonth / parseInt(customDays));
+          }
+          return monthlyCost;
+        default: return monthlyCost;
+      }
+    };
+
+    // current monthly total cost
+    const currentMonthlyCost = subscriptions.reduce((sum, sub) => {
+      return sum + getMonthlyEquivalent(sub.cost, sub.frequency, sub.custom_frequency_days);
+    }, 0);
+
+    // calculate new monthly cost with the proposed subscription
+    const newSubscriptionMonthlyCost = getMonthlyEquivalent(cost, frequency, customFrequencyDays);
+    const newMonthlyCost = currentMonthlyCost + newSubscriptionMonthlyCost;
+
+    // check if it exceeds budget
+    const exceedsBudget = newMonthlyCost > monthlyBudget;
+    const overageAmount = exceedsBudget ? newMonthlyCost - monthlyBudget : 0;
+
+    res.json({
+      exceedsBudget,
+      monthlyBudget: parseFloat(monthlyBudget.toFixed(2)),
+      currentMonthlyCost: parseFloat(currentMonthlyCost.toFixed(2)),
+      newMonthlyCost: parseFloat(newMonthlyCost.toFixed(2)),
+      overageAmount: parseFloat(overageAmount.toFixed(2)),
+      newSubscriptionMonthlyCost: parseFloat(newSubscriptionMonthlyCost.toFixed(2))
+    });
+  } catch (error) {
+    console.error('Error checking budget:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // =============================================================================
 // START SERVER
 // =============================================================================
