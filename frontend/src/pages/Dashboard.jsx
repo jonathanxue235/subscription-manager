@@ -7,6 +7,7 @@ import ProfileDropdown from '../components/ProfileDropdown';
 import ReminderManager from "../components/ReminderManager";
 import BudgetSettings from '../components/BudgetSettings';
 import storage from '../utils/storage';
+import { formatDate } from '../utils/dateUtils';
 import '../common.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001';
@@ -62,11 +63,7 @@ const Dashboard = () => {
         frequency: sub.frequency,
         custom_frequency_days: sub.custom_frequency_days,
         startDate: sub.start_date,
-        renewalDate: new Date(sub.renewal_date).toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric'
-        }),
+        renewalDate: formatDate(sub.renewal_date),
         cost: `$${parseFloat(sub.cost).toFixed(2)}`,
         logo: sub.logo || sub.name.charAt(0).toUpperCase()
       }));
@@ -84,11 +81,7 @@ const Dashboard = () => {
         {
           label: "Next Renewal",
           value: statsData.nextRenewal
-            ? new Date(statsData.nextRenewal.date).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-              })
+            ? formatDate(statsData.nextRenewal.date)
             : 'N/A',
           subtext: statsData.nextRenewal ? statsData.nextRenewal.name : undefined
         }

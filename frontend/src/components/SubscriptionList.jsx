@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import EditSubscriptionModal from './EditSubscriptionModal';
+import { formatDate } from '../utils/dateUtils';
 import '../common.css';
 
 const SubscriptionList = ({ subscriptions, onDelete }) => {
@@ -17,17 +18,6 @@ const SubscriptionList = ({ subscriptions, onDelete }) => {
     if (status === 'Active') return 'status-badge status-active';
     if (status === 'Expiring Soon') return 'status-badge status-warning';
     return 'status-badge';
-  };
-
-  const formatStartDate = (startDate) => {
-    if (!startDate) return 'N/A';
-
-    const date = new Date(startDate);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
   };
 
   const handleRowClick = (subscription) => {
@@ -173,7 +163,7 @@ const SubscriptionList = ({ subscriptions, onDelete }) => {
               </td>
               <td><span className={getStatusClass(sub.status)}>{sub.status}</span></td>
               <td>{sub.frequency}</td>
-              <td>{formatStartDate(sub.startDate)}</td>
+              <td>{formatDate(sub.startDate)}</td>
               <td>{sub.renewalDate}</td>
               <td>{sub.cost}</td>
               <td>

@@ -114,7 +114,7 @@ describe('SubscriptionList Component', () => {
     });
   });
 
-  describe('formatStartDate Function', () => {
+  describe('Start Date Display', () => {
     test('formats start date correctly for standard date', () => {
       const subscription = {
         ...mockSubscriptions[0],

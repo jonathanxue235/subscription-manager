@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { formatDateTime } from "../utils/dateUtils";
 import "../common.css";
 
 function UserProfilePage() {
@@ -200,7 +201,7 @@ function UserProfilePage() {
             <div className="info-row">
               <span className="info-label">Member Since</span>
               <span className="info-value">
-                {new Date(user.created_at).toLocaleDateString("en-US", {
+                {formatDateTime(user.created_at, {
                   year: "numeric",
                   month: "long",
                   day: "numeric",
