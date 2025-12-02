@@ -83,7 +83,7 @@ describe('SubscriptionList Component', () => {
       expect(screen.getByText('Name')).toBeInTheDocument();
       expect(screen.getByText('Status')).toBeInTheDocument();
       expect(screen.getByText('Frequency')).toBeInTheDocument();
-      expect(screen.getByText('Duration')).toBeInTheDocument();
+      expect(screen.getByText('Start Date')).toBeInTheDocument();
       expect(screen.getByText('Renewal Date')).toBeInTheDocument();
       expect(screen.getByText('Cost')).toBeInTheDocument();
       expect(screen.getByText('Remove Subscription')).toBeInTheDocument();
@@ -114,130 +114,55 @@ describe('SubscriptionList Component', () => {
     });
   });
 
-  describe('calculateDuration Function', () => {
-    test('calculates duration in days for recent subscriptions', () => {
-      const today = new Date();
-      const yesterday = new Date(today);
-      yesterday.setDate(today.getDate() - 1);
-      
+  describe('formatStartDate Function', () => {
+    test('formats start date correctly for standard date', () => {
       const subscription = {
         ...mockSubscriptions[0],
-        startDate: yesterday.toISOString().split('T')[0],
+        startDate: '2024-01-15',
       };
 
       render(<SubscriptionList subscriptions={[subscription]} onDelete={mockOnDelete} />);
 
-      expect(screen.getByText('1 day')).toBeInTheDocument();
+      expect(screen.getByText('Jan 15, 2024')).toBeInTheDocument();
     });
 
-    test('calculates duration in days (plural) for subscriptions within a month', () => {
-      const today = new Date();
-      const fiveDaysAgo = new Date(today);
-      fiveDaysAgo.setDate(today.getDate() - 5);
-      
+    test('formats start date correctly for different months', () => {
       const subscription = {
         ...mockSubscriptions[0],
-        startDate: fiveDaysAgo.toISOString().split('T')[0],
+        startDate: '2023-06-01',
       };
 
       render(<SubscriptionList subscriptions={[subscription]} onDelete={mockOnDelete} />);
 
-      expect(screen.getByText('5 days')).toBeInTheDocument();
+      expect(screen.getByText('Jun 1, 2023')).toBeInTheDocument();
     });
 
-    test('displays "Today" for subscriptions starting today', () => {
-      const today = new Date();
-      
+    test('formats start date correctly for December', () => {
       const subscription = {
         ...mockSubscriptions[0],
-        startDate: today.toISOString().split('T')[0],
+        startDate: '2024-12-25',
       };
 
       render(<SubscriptionList subscriptions={[subscription]} onDelete={mockOnDelete} />);
 
-      expect(screen.getByText('Today')).toBeInTheDocument();
-    });
-
-    test('calculates duration in months for subscriptions less than a year old', () => {
-      const today = new Date();
-      const twoMonthsAgo = new Date(today);
-      twoMonthsAgo.setMonth(today.getMonth() - 2);
-      
-      const subscription = {
-        ...mockSubscriptions[0],
-        startDate: twoMonthsAgo.toISOString().split('T')[0],
-      };
-
-      render(<SubscriptionList subscriptions={[subscription]} onDelete={mockOnDelete} />);
-
-      expect(screen.getByText('2 months')).toBeInTheDocument();
-    });
-
-    test('calculates duration in years for subscriptions over a year old', () => {
-      const today = new Date();
-      const twoYearsAgo = new Date(today);
-      twoYearsAgo.setFullYear(today.getFullYear() - 2);
-      
-      const subscription = {
-        ...mockSubscriptions[0],
-        startDate: twoYearsAgo.toISOString().split('T')[0],
-      };
-
-      render(<SubscriptionList subscriptions={[subscription]} onDelete={mockOnDelete} />);
-
-      expect(screen.getByText('2 years')).toBeInTheDocument();
-    });
-
-    test('calculates duration in years and months for subscriptions with both', () => {
-      const today = new Date();
-      const oneYearThreeMonthsAgo = new Date(today);
-      oneYearThreeMonthsAgo.setFullYear(today.getFullYear() - 1);
-      oneYearThreeMonthsAgo.setMonth(today.getMonth() - 3);
-      
-      const subscription = {
-        ...mockSubscriptions[0],
-        startDate: oneYearThreeMonthsAgo.toISOString().split('T')[0],
-      };
-
-      render(<SubscriptionList subscriptions={[subscription]} onDelete={mockOnDelete} />);
-
-      expect(screen.getByText('1 year 3 months')).toBeInTheDocument();
-    });
-
-    test('handles singular year correctly', () => {
-      const today = new Date();
-      const oneYearAgo = new Date(today);
-      oneYearAgo.setFullYear(today.getFullYear() - 1);
-      
-      const subscription = {
-        ...mockSubscriptions[0],
-        startDate: oneYearAgo.toISOString().split('T')[0],
-      };
-
-      render(<SubscriptionList subscriptions={[subscription]} onDelete={mockOnDelete} />);
-
-      expect(screen.getByText('1 year')).toBeInTheDocument();
-    });
-
-    test('handles singular month correctly', () => {
-      const today = new Date();
-      const oneMonthAgo = new Date(today);
-      oneMonthAgo.setMonth(today.getMonth() - 1);
-      
-      const subscription = {
-        ...mockSubscriptions[0],
-        startDate: oneMonthAgo.toISOString().split('T')[0],
-      };
-
-      render(<SubscriptionList subscriptions={[subscription]} onDelete={mockOnDelete} />);
-
-      expect(screen.getByText('1 month')).toBeInTheDocument();
+      expect(screen.getByText('Dec 25, 2024')).toBeInTheDocument();
     });
 
     test('displays N/A when startDate is missing', () => {
       const subscription = {
         ...mockSubscriptions[0],
         startDate: null,
+      };
+
+      render(<SubscriptionList subscriptions={[subscription]} onDelete={mockOnDelete} />);
+
+      expect(screen.getByText('N/A')).toBeInTheDocument();
+    });
+
+    test('displays N/A when startDate is undefined', () => {
+      const subscription = {
+        ...mockSubscriptions[0],
+        startDate: undefined,
       };
 
       render(<SubscriptionList subscriptions={[subscription]} onDelete={mockOnDelete} />);

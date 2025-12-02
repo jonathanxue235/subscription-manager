@@ -19,38 +19,15 @@ const SubscriptionList = ({ subscriptions, onDelete }) => {
     return 'status-badge';
   };
 
-  const calculateDuration = (startDate) => {
+  const formatStartDate = (startDate) => {
     if (!startDate) return 'N/A';
 
-    const start = new Date(startDate);
-    const today = new Date();
-
-    let years = today.getFullYear() - start.getFullYear();
-    let months = today.getMonth() - start.getMonth();
-
-    if (months < 0) {
-      years--;
-      months += 12;
-    }
-
-    if (years === 0 && months === 0) {
-      const days = Math.floor((today - start) / (1000 * 60 * 60 * 24));
-      if (days === 0) return 'Today';
-      if (days === 1) return '1 day';
-      return `${days} days`;
-    }
-
-    if (years === 0) {
-      return months === 1 ? '1 month' : `${months} months`;
-    }
-
-    if (months === 0) {
-      return years === 1 ? '1 year' : `${years} years`;
-    }
-
-    const yearText = years === 1 ? '1 year' : `${years} years`;
-    const monthText = months === 1 ? '1 month' : `${months} months`;
-    return `${yearText} ${monthText}`;
+    const date = new Date(startDate);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
   };
 
   const handleRowClick = (subscription) => {
@@ -158,7 +135,7 @@ const SubscriptionList = ({ subscriptions, onDelete }) => {
             <th>Name</th>
             <th>Status</th>
             <th>Frequency</th>
-            <th>Duration</th>
+            <th>Start Date</th>
             <th>Renewal Date</th>
             <th style={{ whiteSpace: 'nowrap' }}>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
@@ -196,7 +173,7 @@ const SubscriptionList = ({ subscriptions, onDelete }) => {
               </td>
               <td><span className={getStatusClass(sub.status)}>{sub.status}</span></td>
               <td>{sub.frequency}</td>
-              <td>{calculateDuration(sub.startDate)}</td>
+              <td>{formatStartDate(sub.startDate)}</td>
               <td>{sub.renewalDate}</td>
               <td>{sub.cost}</td>
               <td>
