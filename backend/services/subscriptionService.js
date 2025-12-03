@@ -135,11 +135,111 @@ class SubscriptionService {
   async getSubscriptionHistory(userId) {
     const subscriptions = await this.repository.findByUserId(userId);
 
-    return subscriptions.map(sub => ({
-      date: sub.start_date,
-      cost: this.convertToMonthlyCost(sub.cost, sub.billing_cycle),
-      name: sub.name
+    if (subscriptions.length === 0) {
+      return [];
+    }
+
+    // Find the earliest start date to determine how far back to generate data
+    let earliestStartDate = new Date();
+    subscriptions.forEach(sub => {
+      if (sub.start_date) {
+        const startDate = new Date(sub.start_date);
+        if (startDate < earliestStartDate) {
+          earliestStartDate = startDate;
+        }
+      }
+    });
+
+    // Calculate monthly costs based on start dates
+    const monthlyCosts = {};
+    const today = new Date();
+
+    // Generate all months from earliest start date to now
+    const startMonth = new Date(earliestStartDate.getFullYear(), earliestStartDate.getMonth(), 1);
+    const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    let currentDate = new Date(startMonth);
+    while (currentDate <= currentMonth) {
+      const monthKey = currentDate.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+      monthlyCosts[monthKey] = 0;
+      currentDate.setMonth(currentDate.getMonth() + 1);
+    }
+
+    // Helper function to advance renewal date by frequency
+    const advanceRenewalDate = (date, frequency, customDays) => {
+      const newDate = new Date(date);
+      switch (frequency) {
+        case 'Weekly':
+          newDate.setDate(newDate.getDate() + 7);
+          break;
+        case 'Bi-Weekly':
+          newDate.setDate(newDate.getDate() + 14);
+          break;
+        case 'Monthly':
+          newDate.setMonth(newDate.getMonth() + 1);
+          break;
+        case 'Quarterly':
+          newDate.setMonth(newDate.getMonth() + 3);
+          break;
+        case 'Bi-Annual':
+          newDate.setMonth(newDate.getMonth() + 6);
+          break;
+        case 'Annual':
+          newDate.setFullYear(newDate.getFullYear() + 1);
+          break;
+        case 'Custom':
+          newDate.setDate(newDate.getDate() + (customDays || 30));
+          break;
+        default:
+          newDate.setMonth(newDate.getMonth() + 1);
+      }
+      return newDate;
+    };
+
+    // Calculate costs for each subscription
+    subscriptions.forEach(sub => {
+      const startDate = sub.start_date ? new Date(sub.start_date) : new Date();
+      const cost = parseFloat(sub.cost);
+
+      // For each month, count how many renewals occur
+      Object.keys(monthlyCosts).forEach(monthKey => {
+        const [monthStr, yearStr] = monthKey.split(' ');
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const monthIndex = monthNames.indexOf(monthStr);
+        const year = 2000 + parseInt(yearStr);
+
+        // Get first and last day of the month
+        const monthStart = new Date(year, monthIndex, 1);
+        const monthEnd = new Date(year, monthIndex + 1, 0); // Last day of month
+
+        // Only process if subscription started before month end
+        if (startDate <= monthEnd) {
+          let renewalCount = 0;
+          let currentRenewalDate = new Date(startDate);
+
+          // Count renewals that fall within this month
+          while (currentRenewalDate <= monthEnd) {
+            if (currentRenewalDate >= monthStart && currentRenewalDate <= monthEnd) {
+              renewalCount++;
+            }
+            // Move to next renewal date
+            currentRenewalDate = advanceRenewalDate(currentRenewalDate, sub.frequency, sub.custom_frequency_days);
+          }
+
+          // Add the cost for this month (renewalCount * cost)
+          monthlyCosts[monthKey] += renewalCount * cost;
+        }
+      });
+    });
+
+    // Transform to chart format
+    const chartData = Object.entries(monthlyCosts).map(([name, cost]) => ({
+      name,
+      cost: parseFloat(cost.toFixed(2))
     }));
+
+    return chartData;
   }
 
   calculateRenewalDate(startDate, frequency, customFrequencyDays = null) {
