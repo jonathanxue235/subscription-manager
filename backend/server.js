@@ -124,6 +124,9 @@ app.get('/api/user', authenticateToken, async (req, res) => {
   }
 });
 
+// Update user profile
+app.put('/api/user', authenticateToken, (req, res) => authController.updateProfile(req, res));
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });

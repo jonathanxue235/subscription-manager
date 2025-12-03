@@ -3,18 +3,21 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { formatDateTime } from "../utils/dateUtils";
+import api from "../services/api";
+import storage from "../utils/storage";
 import "../common.css";
 
 function UserProfilePage() {
   const navigate = useNavigate();
   const { user, logout, loading, refreshUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
-  const [editedEmail, setEditedEmail] = useState("");
   const [editedUsername, setEditedUsername] = useState("");
   const [editedBudget, setEditedBudget] = useState("");
   const [editedLocation, setEditedLocation] = useState("");
   const [editedPrimaryCurr, setEditedPrimaryCurr] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
+  const [error, setError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   // Refresh user data when component mounts
   useEffect(() => {
@@ -32,31 +35,55 @@ function UserProfilePage() {
 
   const handleEdit = () => {
     if (!isEditing) {
-      setEditedEmail(user?.email || "");
       setEditedUsername(user?.username || "");
       setEditedBudget(user?.monthly_budget || "");
       setEditedLocation(user?.location || "");
-      setEditedPrimaryCurr(user?.primary_curr || "");
+      setEditedPrimaryCurr(user?.primary_curr || "USD");
     }
     setIsEditing(!isEditing);
     setSaveMessage("");
+    setError("");
   };
 
-  const handleSave = () => {
-    // TODO: Implement save functionality with your backend API
-    setSaveMessage("Profile updated successfully!");
-    setIsEditing(false);
-    setTimeout(() => setSaveMessage(""), 3000);
+  const handleSave = async () => {
+    setIsSaving(true);
+    setError("");
+    setSaveMessage("");
+
+    try {
+      const token = storage.getToken();
+
+      const updates = {
+        username: editedUsername,
+        monthly_budget: editedBudget ? parseFloat(editedBudget) : null,
+        location: editedLocation.trim() || null,
+        primary_curr: editedPrimaryCurr
+      };
+
+      await api.put('/api/user', updates, token);
+
+      // Refresh user data to get the latest from the server
+      await refreshUser();
+
+      setSaveMessage("Profile updated successfully!");
+      setIsEditing(false);
+      setTimeout(() => setSaveMessage(""), 3000);
+    } catch (err) {
+      setError(err.message || "Failed to update profile");
+      console.error("Error updating profile:", err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCancel = () => {
     setIsEditing(false);
-    setEditedEmail(user?.email || "");
     setEditedUsername(user?.username || "");
     setEditedBudget(user?.monthly_budget || "");
     setEditedLocation(user?.location || "");
-    setEditedPrimaryCurr(user?.primary_curr || "");
+    setEditedPrimaryCurr(user?.primary_curr || "USD");
     setSaveMessage("");
+    setError("");
   };
 
   const handleLogout = () => {
@@ -121,21 +148,14 @@ function UserProfilePage() {
         {/* Success Message */}
         {saveMessage && <div className="success-message">{saveMessage}</div>}
 
+        {/* Error Message */}
+        {error && <div className="error-message">{error}</div>}
+
         {/* User Info Section */}
         <div className="profile-info-section">
           <div className="info-row">
             <span className="info-label">Email</span>
-            {isEditing ? (
-              <input
-                type="email"
-                className="input"
-                value={editedEmail}
-                onChange={(e) => setEditedEmail(e.target.value)}
-                style={{ maxWidth: "300px" }}
-              />
-            ) : (
-              <span className="info-value">{user?.email || "N/A"}</span>
-            )}
+            <span className="info-value">{user?.email || "N/A"}</span>
           </div>
 
           <div className="info-row">
@@ -146,6 +166,7 @@ function UserProfilePage() {
                 className="input"
                 value={editedUsername}
                 onChange={(e) => setEditedUsername(e.target.value)}
+                disabled={isSaving}
                 style={{ maxWidth: "300px" }}
               />
             ) : (
@@ -162,6 +183,7 @@ function UserProfilePage() {
                 className="input"
                 value={editedBudget}
                 onChange={(e) => setEditedBudget(e.target.value)}
+                disabled={isSaving}
                 style={{ maxWidth: "300px" }}
               />
             ) : (
@@ -184,6 +206,7 @@ function UserProfilePage() {
                 className="input"
                 value={editedLocation}
                 onChange={(e) => setEditedLocation(e.target.value)}
+                disabled={isSaving}
                 style={{ maxWidth: "300px" }}
               />
             ) : (
@@ -194,13 +217,22 @@ function UserProfilePage() {
           <div className="info-row">
             <span className="info-label">Primary Currency</span>
             {isEditing ? (
-              <input
-                type="text"
+              <select
                 className="input"
                 value={editedPrimaryCurr}
                 onChange={(e) => setEditedPrimaryCurr(e.target.value)}
+                disabled={isSaving}
                 style={{ maxWidth: "300px" }}
-              />
+              >
+                <option value="USD">USD - US Dollar</option>
+                <option value="EUR">EUR - Euro</option>
+                <option value="GBP">GBP - British Pound</option>
+                <option value="CAD">CAD - Canadian Dollar</option>
+                <option value="AUD">AUD - Australian Dollar</option>
+                <option value="JPY">JPY - Japanese Yen</option>
+                <option value="CNY">CNY - Chinese Yuan</option>
+                <option value="INR">INR - Indian Rupee</option>
+              </select>
             ) : (
               <span className="info-value">{user?.primary_curr || "N/A"}</span>
             )}
@@ -224,10 +256,18 @@ function UserProfilePage() {
         <div className="btn-group">
           {isEditing ? (
             <>
-              <button className="btn btn-primary" onClick={handleSave}>
-                Save Changes
+              <button
+                className="btn btn-primary"
+                onClick={handleSave}
+                disabled={isSaving}
+              >
+                {isSaving ? 'Saving...' : 'Save Changes'}
               </button>
-              <button className="btn btn-secondary" onClick={handleCancel}>
+              <button
+                className="btn btn-secondary"
+                onClick={handleCancel}
+                disabled={isSaving}
+              >
                 Cancel
               </button>
             </>

@@ -80,6 +80,24 @@ class AuthService {
     }
   }
 
+  async updateProfile(userId, updates) {
+    const allowedFields = ['username', 'monthly_budget', 'location', 'primary_curr'];
+    const filteredUpdates = {};
+
+    for (const [key, value] of Object.entries(updates)) {
+      if (allowedFields.includes(key)) {
+        filteredUpdates[key] = value;
+      }
+    }
+
+    if (Object.keys(filteredUpdates).length === 0) {
+      throw new Error("No valid fields to update");
+    }
+
+    const updatedUser = await this.userRepo.update(userId, filteredUpdates);
+    return this._sanitizeUser(updatedUser);
+  }
+
   _generateToken(user) {
     return jwt.sign({ userId: user.id, email: user.email }, this.jwtSecret, {
       expiresIn: "24h",

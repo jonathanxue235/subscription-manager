@@ -49,6 +49,21 @@ class UserRepository {
 
     return data;
   }
+
+  async update(id, updates) {
+    const { data, error } = await this.db
+      .from('users')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to update user: ${error.message}`);
+    }
+
+    return data;
+  }
 }
 
 module.exports = UserRepository;

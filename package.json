@@ -18,8 +18,8 @@
   "homepage": "https://github.com/jonathanxue235/subscription-manager#readme",
   "dependencies": {
     "@supabase/supabase-js": "^2.78.0",
-    "recharts": "^3.4.1",
-    "react-router-dom": "^7.9.6"
-  },
-  "devDependencies": {}
+    "fuse.js": "^7.1.0",
+    "react-router-dom": "^7.9.6",
+    "recharts": "^3.4.1"
+  }
 }

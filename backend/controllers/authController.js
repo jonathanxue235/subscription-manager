@@ -55,6 +55,28 @@ class AuthController {
     }
   }
 
+  async updateProfile(req, res) {
+    try {
+      const { username, monthly_budget, location, primary_curr } = req.body;
+      const userId = req.user.userId;
+
+      const updates = {};
+      if (username !== undefined) updates.username = username;
+      if (monthly_budget !== undefined) updates.monthly_budget = monthly_budget;
+      if (location !== undefined) updates.location = location;
+      if (primary_curr !== undefined) updates.primary_curr = primary_curr;
+
+      const updatedUser = await this.authService.updateProfile(userId, updates);
+
+      res.json({
+        message: 'Profile updated successfully',
+        user: updatedUser
+      });
+    } catch (error) {
+      this._handleError(error, res);
+    }
+  }
+
   _handleError(error, res) {
     console.error('Controller error:', error);
 
