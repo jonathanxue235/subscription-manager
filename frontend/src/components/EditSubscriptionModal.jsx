@@ -8,8 +8,10 @@ const EditSubscriptionModal = ({ isOpen, onClose, onSuccess, subscription }) => 
     frequency: 'Monthly',
     custom_frequency_days: '',
     start_date: '',
-    cost: ''
-  });
+    cost: '',
+    card_issuer: '',
+    custom_card_issuer: ''
+    });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -18,12 +20,34 @@ const EditSubscriptionModal = ({ isOpen, onClose, onSuccess, subscription }) => 
   // Populate form when subscription changes
   useEffect(() => {
     if (subscription) {
+      const fixedIssuers = [
+        'Chase',
+        'Bank of America',
+        'Capital One',
+        'Citi',
+        'Paypal'
+      ];
+    
+      const existingIssuer = subscription.cardIssuer || subscription.card_issuer || '';
+    
+      let card_issuer = '';
+      let custom_card_issuer = '';
+    
+      if (existingIssuer && fixedIssuers.includes(existingIssuer)) {
+        card_issuer = existingIssuer;
+      } else if (existingIssuer) {
+        card_issuer = '__custom';
+        custom_card_issuer = existingIssuer;
+      }
+    
       setFormData({
         name: subscription.name || '',
         frequency: subscription.frequency || 'Monthly',
         custom_frequency_days: subscription.custom_frequency_days || '',
         start_date: subscription.startDate || '',
-        cost: subscription.cost.replace('$', '') || ''
+        cost: subscription.cost.replace('$', '') || '',
+        card_issuer,
+        custom_card_issuer
       });
     }
   }, [subscription]);
@@ -55,7 +79,15 @@ const EditSubscriptionModal = ({ isOpen, onClose, onSuccess, subscription }) => 
         start_date: formData.start_date,
         cost: formData.cost
       };
-
+      let cardIssuer = null;
+      if (formData.card_issuer === '__custom') {
+        cardIssuer = formData.custom_card_issuer?.trim() || null;
+      } else if (formData.card_issuer) {
+        cardIssuer = formData.card_issuer;
+      }
+      
+      submissionData.card_issuer = cardIssuer;
+      
       // Add custom frequency days if Custom is selected
       if (formData.frequency === 'Custom' && formData.custom_frequency_days) {
         submissionData.custom_frequency_days = parseInt(formData.custom_frequency_days);
@@ -297,7 +329,71 @@ const EditSubscriptionModal = ({ isOpen, onClose, onSuccess, subscription }) => 
               }}
             />
           </div>
+          <div style={{ marginBottom: '16px' }}>
+            <label
+              style={{
+                display: 'block',
+                marginBottom: '6px',
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#374151'
+              }}
+            >
+              Payment Card (Issuer)
+            </label>
+            <select
+              name="card_issuer"
+              value={formData.card_issuer}
+              onChange={handleChange}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                border: '1px solid #D1D5DB',
+                borderRadius: '8px',
+                fontSize: '14px',
+                boxSizing: 'border-box'
+              }}
+            >
+              <option value="">Select card or clear</option>
+              <option value="Chase">Chase</option>
+              <option value="Bank of America">Bank of America</option>
+              <option value="Capital One">Capital One</option>
+              <option value="Citi">Citi</option>
+              <option value="Paypal">Paypal</option>
+              <option value="__custom">Other (Custom)</option>
+            </select>
+          </div>
 
+          {formData.card_issuer === '__custom' && (
+            <div style={{ marginBottom: '20px' }}>
+              <label
+                style={{
+                  display: 'block',
+                  marginBottom: '6px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: '#374151'
+                }}
+              >
+                Custom Card Issuer
+              </label>
+              <input
+                type="text"
+                name="custom_card_issuer"
+                value={formData.custom_card_issuer}
+                onChange={handleChange}
+                placeholder="e.g., Chase Sapphire Preferred"
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  border: '1px solid #D1D5DB',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+          )}
           <div style={{
             display: 'flex',
             gap: '12px',

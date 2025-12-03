@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   renewal_date DATE NOT NULL,
   cost NUMERIC(10, 2) NOT NULL,
   logo TEXT,
+  card_issuer TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -43,6 +44,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
 -- Add columns if they don't exist (for existing databases)
 ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS start_date DATE;
 ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS custom_frequency_days INT;
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS card_issuer TEXT;
 
 -- Add index for faster user subscription lookups
 CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions(user_id);
