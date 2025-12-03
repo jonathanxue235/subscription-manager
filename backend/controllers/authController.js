@@ -82,18 +82,29 @@ class AuthController {
 
     const errorMessage = error.message;
 
+    // Handle validation errors (400 Bad Request)
     if (
       errorMessage.includes('required') ||
       errorMessage.includes('at least') ||
-      errorMessage.includes('already exists')
+      errorMessage.includes('must contain') ||
+      errorMessage.includes('Invalid email format') ||
+      errorMessage.includes('already exists') ||
+      errorMessage.includes('already in use') ||
+      errorMessage.includes('already taken') ||
+      errorMessage.includes('No valid fields to update')
     ) {
       return res.status(400).json({ error: errorMessage });
     }
 
-    if (errorMessage.includes('Invalid email or password')) {
+    // Handle authentication errors (401 Unauthorized)
+    if (
+      errorMessage.includes('Invalid email or password') ||
+      errorMessage.includes('Invalid or expired token')
+    ) {
       return res.status(401).json({ error: errorMessage });
     }
 
+    // Handle all other errors as internal server errors
     res.status(500).json({ error: 'Internal server error' });
   }
 }

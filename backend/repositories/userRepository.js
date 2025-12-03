@@ -22,6 +22,20 @@ class UserRepository {
     return data;
   }
 
+  async findByUsername(username) {
+    const { data, error } = await this.db
+      .from('users')
+      .select('*')
+      .eq('username', username)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      throw new Error(`Database error: ${error.message}`);
+    }
+
+    return data;
+  }
+
   async create(userData) {
     const { data, error } = await this.db
       .from('users')
