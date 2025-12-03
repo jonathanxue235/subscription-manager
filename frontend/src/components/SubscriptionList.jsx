@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trash2 } from 'lucide-react';
+import Fuse from 'fuse.js';
 import EditSubscriptionModal from './EditSubscriptionModal';
 import { formatDate } from '../utils/dateUtils';
 import '../common.css';
 import cancellationLinks from '../data/cancellationLinks';
+import HighlightedText from './HighlightedText';
+import SearchBar from "./SearchBar";
+import { useSubscriptionSearch } from "../utils/useSubscriptionSearch";
 import storage from '../utils/storage';
 // Load all PNG icons from the `data` folder so we can select one by subscription name.
 const icons = {};
@@ -20,13 +24,15 @@ try {
   // require.context may not exist in some environments (tests). Safely ignore.
 }
 
+
 const SubscriptionList = ({ subscriptions, onDelete }) => {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [editSubscription, setEditSubscription] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
   const [sortDirection, setSortDirection] = useState(null); // null | 'asc' | 'desc'
+  const [sortByDate, setSortByDate] = useState(null); // null | "asc" | "desc"
+
 
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001';
 
@@ -82,32 +88,58 @@ const SubscriptionList = ({ subscriptions, onDelete }) => {
       setLoading(false);
     }
   };
-
+  const parseCost = (cost) => {
+    if (!cost) return 0;
+    const num = parseFloat(String(cost).replace(/[^0-9.-]+/g, ""));
+    return Number.isFinite(num) ? num : 0;
+  };
+  
+  const parseDate = (str) => {
+    const d = new Date(str);
+    return isNaN(d) ? null : d;
+  };
+  
   const handleCancelDelete = () => {
     setConfirmDelete(null);
     setError(null);
   };
 
-  const toggleSortDirection = () => setSortDirection((prev) => (prev === null ? 'asc' : prev === 'asc' ? 'desc' : null));
-
-  const normalizedQuery = (searchTerm || '').trim().toLowerCase();
-  const filteredSubscriptions = (subscriptions || []).filter((sub) => {
-    if (!normalizedQuery) return true;
-    const hay = [sub.name, sub.status, sub.frequency, sub.renewalDate, sub.cost]
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase();
-    return hay.includes(normalizedQuery);
-  });
-
-  const parseCost = (cost) => {
-    if (cost === null || cost === undefined) return 0;
-    if (typeof cost === 'number') return cost;
-    const num = parseFloat(String(cost).replace(/[^0-9.-]+/g, ''));
-    return Number.isFinite(num) ? num : 0;
+  const getMatches = (sub, key) => {
+    return sub._matches?.find((m) => m.key === key)?.indices || [];
+  };
+    
+  const toggleSortDirection = () => {
+    setSortByDate(null); 
+    setSortDirection((prev) =>
+      prev === null ? "desc" : prev === "desc" ? "asc" : "desc"
+    );
   };
 
+  const toggleSortByDate = () => {
+    setSortDirection(null); 
+    setSortByDate((prev) =>
+      prev === null ? "desc" : prev === "desc" ? "asc" : "desc"
+    );
+  };
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredSubscriptions = useSubscriptionSearch(
+    subscriptions,
+    searchTerm,
+    parseCost
+  );
+
   const sortedSubscriptions = filteredSubscriptions.slice();
+    if (sortByDate) {
+      sortedSubscriptions.sort((a, b) => {
+        const da = parseDate(a.renewalDate);
+        const db = parseDate(b.renewalDate);
+
+        if (!da || !db) return 0;
+
+        return sortByDate === "asc" ? da - db : db - da;
+      });
+    }
   if (sortDirection) {
     sortedSubscriptions.sort((a, b) => {
       const ca = parseCost(a.cost);
@@ -116,25 +148,13 @@ const SubscriptionList = ({ subscriptions, onDelete }) => {
       return sortDirection === 'asc' ? ca - cb : cb - ca;
     });
   }
-
+  
   return (
     <div className="table-container">
-      <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'flex-end' }}>
-        <input
-          aria-label="Search subscriptions"
-          type="search"
-          placeholder="Search subscriptions..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{
-            padding: '8px 12px',
-            borderRadius: '8px',
-            border: '1px solid #D1D5DB',
-            width: '100%',
-            maxWidth: '320px'
-          }}
-        />
-      </div>
+      <SearchBar
+        subscriptions={subscriptions}
+        onSearch={(value) => setSearchTerm(value)}
+      />
       <table className="sub-table">
         <thead>
           <tr>
@@ -142,7 +162,31 @@ const SubscriptionList = ({ subscriptions, onDelete }) => {
             <th>Status</th>
             <th>Frequency</th>
             <th>Start Date</th>
-            <th>Renewal Date</th>
+            <th style={{ whiteSpace: "nowrap" }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                <span>Renewal Date</span>
+                <button
+                  aria-label="Sort by renewal date"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleSortByDate();
+                  }}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: "12px",
+                    padding: "2px 6px",
+                  }}
+                >
+                  {sortByDate === "asc"
+                    ? "▲"
+                    : sortByDate === "desc"
+                    ? "▼"
+                    : "⇅"}
+                </button>
+              </div>
+            </th>
             <th style={{ whiteSpace: 'nowrap' }}>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                 <span>Cost</span>
@@ -152,7 +196,6 @@ const SubscriptionList = ({ subscriptions, onDelete }) => {
                     e.stopPropagation();
                     toggleSortDirection();
                   }}
-                  title={sortDirection ? `Sort ${sortDirection === 'asc' ? 'descending' : 'clear'}` : 'Sort ascending'}
                   style={{
                     background: 'transparent',
                     border: 'none',
@@ -206,11 +249,28 @@ const SubscriptionList = ({ subscriptions, onDelete }) => {
                       return sub.logo;
                     })()}
                   </div>
-                  {sub.name}
+                  <span style={{ display: "inline-block" }}>
+                    <HighlightedText
+                      text={sub.name}
+                      matches={getMatches(sub, "name")}
+                    />
+                  </span>
                 </div>
               </td>
-              <td><span className={getStatusClass(sub.status)}>{sub.status}</span></td>
-              <td>{sub.frequency}</td>
+              <td>
+                <span className={getStatusClass(sub.status)}>
+                  <HighlightedText
+                    text={sub.status}
+                    matches={getMatches(sub, "status")}
+                  />
+                </span>
+              </td>
+              <td>
+                <HighlightedText
+                  text={sub.frequency}
+                  matches={getMatches(sub, "frequency")}
+                />
+              </td>
               <td>{formatDate(sub.startDate)}</td>
               <td>{sub.renewalDate}</td>
               <td>{sub.cost}</td>
