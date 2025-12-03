@@ -1,10 +1,12 @@
 describe("Add Subscription (E2E)", () => {
     const email = `sub${Date.now()}@example.com`;
+    const username = "Test123";
     const password = "Test123!";
   
     beforeEach(() => {
       cy.visit("http://localhost:3000/signup");
       cy.get('input[placeholder="Email"]').type(email);
+      cy.get('input[placeholder="Username"]').type(username);
       cy.get('input[placeholder="Password"]').type(password);
       cy.get('input[placeholder="Confirm Password"]').type(password);
       cy.get('button[type="submit"]').click();
@@ -22,8 +24,10 @@ describe("Add Subscription (E2E)", () => {
   
           cy.get('input[placeholder="e.g., Netflix"]').type("Netflix");
   
-          cy.get("select").select("Monthly");
-  
+          cy.get("select").eq(0).select("Monthly");
+
+          cy.get("select").eq(1).select("Bank of America");
+
           cy.get('input[type="date"]').type("2025-12-01");
   
           cy.get('input[placeholder="0.00"]').clear().type("10.00");

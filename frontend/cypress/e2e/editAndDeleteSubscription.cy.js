@@ -1,8 +1,9 @@
 describe("Full Subscription Flow (E2E)", () => {
     const email = `flow${Date.now()}@example.com`;
+    const username = "Test123";
     const password = "Test123!";
   
-    const addSub = (name, date, cost, freq = "Monthly") => {
+    const addSub = (name, date, cost, freq = "Monthly", card = "Paypal") => {
       cy.contains('button', '+ Add Subscription')
         .filter(':visible')
         .click();
@@ -11,7 +12,8 @@ describe("Full Subscription Flow (E2E)", () => {
         .filter(':visible')
         .within(() => {
           cy.get('input[placeholder="e.g., Netflix"]').clear().type(name);
-          cy.get("select").select(freq);
+          cy.get("select").eq(0).select(freq);
+          cy.get("select").eq(1).select(card);
           cy.get('input[type="date"]').type(date);
           cy.get('input[placeholder="0.00"]').clear().type(cost);
   
@@ -26,6 +28,7 @@ describe("Full Subscription Flow (E2E)", () => {
     beforeEach(() => {
       cy.visit("http://localhost:3000/signup");
       cy.get('input[placeholder="Email"]').type(email);
+      cy.get('input[placeholder="Username"]').type(username);
       cy.get('input[placeholder="Password"]').type(password);
       cy.get('input[placeholder="Confirm Password"]').type(password);
       cy.get('button[type="submit"]').click();
@@ -66,7 +69,7 @@ describe("Full Subscription Flow (E2E)", () => {
     
     cy.wait("@deleteSub")
       .its("response.statusCode")
-      .should("eq", 200);
+      .should("eq", 204);
     
     cy.contains("HBO Max").should("not.exist");
     

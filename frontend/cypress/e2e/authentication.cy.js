@@ -1,11 +1,13 @@
 describe("User Registration (JWT Auto Login)", () => {
     const email = `cypress${Date.now()}@example.com`;
+    const username = "Test123";
     const password = "Test123!";
   
     it("registers a new user, stores JWT, and redirects to dashboard", () => {
       cy.visit("http://localhost:3000/signup");
   
       cy.get('input[placeholder="Email"]').type(email);
+      cy.get('input[placeholder="Username"]').type(username);
       cy.get('input[placeholder="Password"]').type(password);
       cy.get('input[placeholder="Confirm Password"]').type(password);
   
