@@ -65,7 +65,9 @@ const Dashboard = () => {
         startDate: sub.start_date,
         renewalDate: formatDate(sub.renewal_date),
         cost: `$${parseFloat(sub.cost).toFixed(2)}`,
-        logo: sub.logo || sub.name.charAt(0).toUpperCase()
+        logo: sub.logo || sub.name.charAt(0).toUpperCase(),
+        card_issuer: sub.card_issuer,
+        cardIssuer: sub.card_issuer
       }));
 
       // Transform stats to match UI format

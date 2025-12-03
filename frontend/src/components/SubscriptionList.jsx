@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Trash2 } from 'lucide-react';
-import Fuse from 'fuse.js';
 import EditSubscriptionModal from './EditSubscriptionModal';
 import { formatDate } from '../utils/dateUtils';
 import '../common.css';
@@ -208,6 +207,7 @@ const SubscriptionList = ({ subscriptions, onDelete }) => {
                 </button>
               </div>
             </th>
+            <th>Payment Method</th>
             <th>Remove Subscription</th>
           </tr>
         </thead>
@@ -230,7 +230,6 @@ const SubscriptionList = ({ subscriptions, onDelete }) => {
                         });
 
                         if (candidates.length > 0) {
-                          // Prefer the longest match (more specific)
                           candidates.sort((a, b) => b.length - a.length);
                           src = icons[candidates[0]];
                         }
@@ -274,6 +273,59 @@ const SubscriptionList = ({ subscriptions, onDelete }) => {
               <td>{formatDate(sub.startDate)}</td>
               <td>{sub.renewalDate}</td>
               <td>{sub.cost}</td>
+              <td>
+                {sub.cardIssuer || sub.card_issuer ? (
+                  (() => {
+                    const issuerRaw = String(sub.cardIssuer || sub.card_issuer || '');
+                    const normalizedIssuer = issuerRaw.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+                    let cardIcon = null;
+                    if (normalizedIssuer && icons) {
+                      const candidates = Object.keys(icons).filter((k) => {
+                        const normKey = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+                        return (
+                          normKey &&
+                          (normalizedIssuer.includes(normKey) || normKey.includes(normalizedIssuer))
+                        );
+                      });
+                      if (candidates.length > 0) {
+                        candidates.sort((a, b) => b.length - a.length);
+                        cardIcon = icons[candidates[0]];
+                      }
+                    }
+
+                    return (
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '100%',
+                          height: '100%',
+                          padding: '4px 0'
+                        }}
+                      >
+                        {cardIcon ? (
+                          <img
+                            src={cardIcon}
+                            alt={`${issuerRaw} card`}
+                            style={{
+                              width: 36,
+                              height: 36,
+                              objectFit: 'contain',
+                              borderRadius: '6px'
+                            }}
+                          />
+                        ) : (
+                          <span style={{ fontSize: '13px', color: '#4B5563' }}>{issuerRaw}</span>
+                        )}
+                      </div>
+                    );
+                  })()
+                ) : (
+                  <span style={{ fontSize: '12px', color: '#9CA3AF' }}>—</span>
+                )}
+              </td>
               <td>
                 <button
                   className="btn-remove"

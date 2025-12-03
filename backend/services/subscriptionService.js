@@ -30,7 +30,8 @@ class SubscriptionService {
       start_date: subscriptionData.start_date,
       renewal_date: renewalDate,
       status: subscriptionData.status || 'Active',
-      logo: subscriptionData.logo || subscriptionData.name.charAt(0).toUpperCase()
+      logo: subscriptionData.logo || subscriptionData.name.charAt(0).toUpperCase(),
+      card_issuer: subscriptionData.card_issuer || null
     };
 
     if (subscriptionData.custom_frequency_days) {

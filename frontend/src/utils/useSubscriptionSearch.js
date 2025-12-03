@@ -29,9 +29,11 @@ export function useSubscriptionSearch(subscriptions, searchTerm, parseCost) {
       includeScore: true,
       threshold: 0.4,
       keys: [
-        { name: "name", weight: 0.7 },
+        { name: "name", weight: 0.5 },
         { name: "status", weight: 0.2 },
-        { name: "frequency", weight: 0.1 }
+        { name: "frequency", weight: 0.1 },
+        { name: "card_issuer", weight: 0.1 },
+        { name: "cardIssuer", weight: 0.1 }
       ]
     });
 
