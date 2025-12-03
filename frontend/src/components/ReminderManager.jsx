@@ -47,7 +47,7 @@ const ReminderManager = ({ subscriptions }) => {
           🔔
         </span>
 
-        {reminders.length > 0 && <span className="badge">{reminders.length}</span>}
+        {reminders.length > 0 && <span className="notification-badge">{reminders.length}</span>}
       </div>
 
       {open && (
