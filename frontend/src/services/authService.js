@@ -8,11 +8,15 @@ import api from './api';
 import storage from '../utils/storage';
 
 class AuthService {
-  async signup(email, password) {
+  async signup(email, password, additionalData = {}) {
     this._validateEmail(email);
     this._validatePassword(password);
 
-    const data = await api.post('/api/register', { email, password });
+    const data = await api.post('/api/register', {
+      email,
+      password,
+      ...additionalData
+    });
 
     storage.setToken(data.token);
     storage.setUser(data.user);

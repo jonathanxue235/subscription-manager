@@ -23,7 +23,7 @@ function UserProfilePage() {
         try {
           await refreshUser();
         } catch (error) {
-          console.error('Failed to refresh user data:', error);
+          console.error("Failed to refresh user data:", error);
         }
       }
     };
@@ -34,7 +34,7 @@ function UserProfilePage() {
     if (!isEditing) {
       setEditedEmail(user?.email || "");
       setEditedUsername(user?.username || "");
-      setEditedBudget(user?.budget || "");
+      setEditedBudget(user?.monthly_budget || "");
       setEditedLocation(user?.location || "");
       setEditedPrimaryCurr(user?.primary_curr || "");
     }
@@ -53,7 +53,7 @@ function UserProfilePage() {
     setIsEditing(false);
     setEditedEmail(user?.email || "");
     setEditedUsername(user?.username || "");
-    setEditedBudget(user?.budget || "");
+    setEditedBudget(user?.monthly_budget || "");
     setEditedLocation(user?.location || "");
     setEditedPrimaryCurr(user?.primary_curr || "");
     setSaveMessage("");
@@ -154,17 +154,25 @@ function UserProfilePage() {
           </div>
 
           <div className="info-row">
-            <span className="info-label">Budget</span>
+            <span className="info-label">Monthly Budget</span>
             {isEditing ? (
               <input
                 type="number"
+                step="0.01"
                 className="input"
                 value={editedBudget}
                 onChange={(e) => setEditedBudget(e.target.value)}
                 style={{ maxWidth: "300px" }}
               />
             ) : (
-              <span className="info-value">{user?.budget || "N/A"}</span>
+              <span className="info-value">
+                {user?.monthly_budget != null
+                  ? new Intl.NumberFormat('en-US', {
+                      style: 'currency',
+                      currency: user?.primary_curr || 'USD'
+                    }).format(user.monthly_budget)
+                  : "Not set"}
+              </span>
             )}
           </div>
 

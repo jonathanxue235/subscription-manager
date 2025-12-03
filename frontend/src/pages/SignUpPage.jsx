@@ -19,6 +19,10 @@ function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [username, setUsername] = useState('');
+  const [monthlyBudget, setMonthlyBudget] = useState('');
+  const [location, setLocation] = useState('');
+  const [primaryCurrency, setPrimaryCurrency] = useState('USD');
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -36,7 +40,12 @@ function SignupPage() {
 
     try {
       // Use AuthContext signup - all business logic hidden!
-      await signup(email, password);
+      await signup(email, password, {
+        username,
+        monthly_budget: monthlyBudget ? parseFloat(monthlyBudget) : null,
+        location: location.trim() || null,
+        primary_curr: primaryCurrency
+      });
 
       console.log('Registration successful');
 
@@ -66,6 +75,15 @@ function SignupPage() {
             className="input"
           />
           <input
+            type="text"
+            value={username}
+            placeholder="Username"
+            onChange={(event) => setUsername(event.target.value)}
+            required
+            disabled={isLoading}
+            className="input"
+          />
+          <input
             type="password"
             value={password}
             placeholder="Password"
@@ -83,6 +101,38 @@ function SignupPage() {
             disabled={isLoading}
             className="input"
           />
+          <input
+            type="number"
+            step="0.01"
+            value={monthlyBudget}
+            placeholder="Monthly Budget (optional)"
+            onChange={(event) => setMonthlyBudget(event.target.value)}
+            disabled={isLoading}
+            className="input"
+          />
+          <input
+            type="text"
+            value={location}
+            placeholder="Location (optional)"
+            onChange={(event) => setLocation(event.target.value)}
+            disabled={isLoading}
+            className="input"
+          />
+          <select
+            value={primaryCurrency}
+            onChange={(event) => setPrimaryCurrency(event.target.value)}
+            disabled={isLoading}
+            className="input"
+          >
+            <option value="USD">USD - US Dollar</option>
+            <option value="EUR">EUR - Euro</option>
+            <option value="GBP">GBP - British Pound</option>
+            <option value="CAD">CAD - Canadian Dollar</option>
+            <option value="AUD">AUD - Australian Dollar</option>
+            <option value="JPY">JPY - Japanese Yen</option>
+            <option value="CNY">CNY - Chinese Yuan</option>
+            <option value="INR">INR - Indian Rupee</option>
+          </select>
           {error && <p className="error-message">{error}</p>}
           <button type="submit" disabled={isLoading} className="btn btn-primary btn-full">
             {isLoading ? 'Creating Account...' : 'Sign Up'}
