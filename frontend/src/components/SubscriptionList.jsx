@@ -4,6 +4,7 @@ import EditSubscriptionModal from './EditSubscriptionModal';
 import { formatDate } from '../utils/dateUtils';
 import '../common.css';
 import cancellationLinks from '../data/cancellationLinks';
+import storage from '../utils/storage';
 // Load all PNG icons from the `data` folder so we can select one by subscription name.
 const icons = {};
 function importAll(r) {
@@ -51,7 +52,7 @@ const SubscriptionList = ({ subscriptions, onDelete }) => {
     setError(null);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = storage.getToken();
       if (!token) {
         setError('Please log in to delete subscriptions');
         setLoading(false);

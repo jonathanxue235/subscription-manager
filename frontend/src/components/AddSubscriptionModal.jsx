@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import '../common.css';
 import budgetService from '../services/budgetService';
+import storage from '../utils/storage';
 
 const AddSubscriptionModal = ({ isOpen, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -30,7 +31,7 @@ const AddSubscriptionModal = ({ isOpen, onClose, onSuccess }) => {
     setError(null);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = storage.getToken();
       if (!token) {
         setError('Please log in to add subscriptions');
         setLoading(false);
@@ -122,7 +123,7 @@ const AddSubscriptionModal = ({ isOpen, onClose, onSuccess }) => {
   const handleBudgetConfirm = async () => {
     setShowBudgetConfirm(false);
     setLoading(true);
-    const token = localStorage.getItem('token');
+    const token = storage.getToken();
     await createSubscription(token);
   };
 

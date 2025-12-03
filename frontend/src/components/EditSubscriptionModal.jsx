@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import '../common.css';
+import storage from '../utils/storage';
 
 const EditSubscriptionModal = ({ isOpen, onClose, onSuccess, subscription }) => {
   const [formData, setFormData] = useState({
@@ -40,7 +41,7 @@ const EditSubscriptionModal = ({ isOpen, onClose, onSuccess, subscription }) => 
     setError(null);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = storage.getToken();
       if (!token) {
         setError('Please log in to edit subscriptions');
         setLoading(false);
