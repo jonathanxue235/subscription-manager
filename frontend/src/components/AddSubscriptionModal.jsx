@@ -69,7 +69,7 @@ const AddSubscriptionModal = ({ isOpen, onClose, onSuccess }) => {
     }
   };
 
-  const createSubscription = async (token) => {
+  const createSubscription = async (token, bypassBudget = false) => {
     try {
       // prepare submission data
       const submissionData = {
@@ -78,13 +78,19 @@ const AddSubscriptionModal = ({ isOpen, onClose, onSuccess }) => {
         start_date: formData.start_date,
         cost: formData.cost
       };
+
+      // Add bypass flag if user confirmed budget override
+      if (bypassBudget) {
+        submissionData.bypassBudgetCheck = true;
+      }
+
       let cardIssuer = null;
       if (formData.card_issuer === '__custom') {
         cardIssuer = formData.custom_card_issuer?.trim() || null;
       } else if (formData.card_issuer) {
         cardIssuer = formData.card_issuer;
       }
-      
+
       if (cardIssuer) {
         submissionData.card_issuer = cardIssuer;
       }
@@ -92,6 +98,9 @@ const AddSubscriptionModal = ({ isOpen, onClose, onSuccess }) => {
       if (formData.frequency === 'Custom' && formData.custom_frequency_days) {
         submissionData.custom_frequency_days = parseInt(formData.custom_frequency_days);
       }
+
+      console.log('Final submission data being sent:', submissionData);
+      console.log('bypassBudget param was:', bypassBudget);
 
       const response = await fetch(`${BACKEND_URL}/api/subscriptions`, {
         method: 'POST',
@@ -107,7 +116,17 @@ const AddSubscriptionModal = ({ isOpen, onClose, onSuccess }) => {
         throw new Error(data.error || 'Failed to add subscription');
       }
 
-      // Reset form
+      const responseData = await response.json();
+      console.log('Subscription created successfully:', responseData);
+      console.log('Response status was:', response.status);
+
+      // Check if this was actually created (status 201) or just a warning (status 200)
+      if (responseData.warning) {
+        console.error('Backend still returned a warning instead of creating subscription!');
+        throw new Error('Backend returned warning instead of creating subscription');
+      }
+
+      // reset form
       setFormData({
         name: '',
         frequency: 'Monthly',
@@ -118,16 +137,24 @@ const AddSubscriptionModal = ({ isOpen, onClose, onSuccess }) => {
         custom_card_issuer: ''
       });
 
-      // Call success callback to refresh dashboard
-      if (onSuccess) onSuccess();
+      // call success callback to refresh dashboard
+      console.log('About to call onSuccess callback');
+      if (onSuccess) {
+        console.log('Calling onSuccess to refresh dashboard');
+        await onSuccess();
+        console.log('onSuccess completed');
+      } else {
+        console.warn('No onSuccess callback provided!');
+      }
 
-      // Close modal
+      // close modal
       onClose();
       setShowBudgetConfirm(false);
       setBudgetOverage(0);
     } catch (err) {
       console.error('Error creating subscription:', err);
       setError(err.message);
+      throw err; //  
     } finally {
       setLoading(false);
     }
@@ -136,8 +163,14 @@ const AddSubscriptionModal = ({ isOpen, onClose, onSuccess }) => {
   const handleBudgetConfirm = async () => {
     setShowBudgetConfirm(false);
     setLoading(true);
-    const token = storage.getToken();
-    await createSubscription(token);
+    try {
+      const token = storage.getToken();
+      await createSubscription(token, true);
+    } catch (err) {
+      console.error('Error in handleBudgetConfirm:', err);
+      setError(err.message);
+      setLoading(false);
+    }
   };
 
   const handleBudgetCancel = () => {

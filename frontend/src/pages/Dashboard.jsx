@@ -27,6 +27,7 @@ const Dashboard = () => {
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
 
   const fetchDashboardData = async () => {
+    console.log('fetchDashboardData called - refreshing dashboard...');
     try {
       const token = storage.getToken();
       if (!token) {
@@ -88,6 +89,12 @@ const Dashboard = () => {
           subtext: statsData.nextRenewal ? statsData.nextRenewal.name : undefined
         }
       ];
+
+      console.log('Dashboard data fetched successfully:', {
+        subscriptionsCount: formattedSubscriptions.length,
+        stats: formattedStats,
+        historyPoints: historyData.length
+      });
 
       setSubscriptions(formattedSubscriptions);
       setStats(formattedStats);
