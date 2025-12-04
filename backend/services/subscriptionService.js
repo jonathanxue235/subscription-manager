@@ -244,34 +244,43 @@ class SubscriptionService {
 
   calculateRenewalDate(startDate, frequency, customFrequencyDays = null) {
     const start = new Date(startDate);
-    const renewal = new Date(start);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day for comparison
 
-    switch (frequency) {
-      case 'Weekly':
-        renewal.setUTCDate(start.getUTCDate() + 7);
-        break;
-      case 'Bi-Weekly':
-        renewal.setUTCDate(start.getUTCDate() + 14);
-        break;
-      case 'Monthly':
-        renewal.setUTCMonth(start.getUTCMonth() + 1);
-        break;
-      case 'Quarterly':
-        renewal.setUTCMonth(start.getUTCMonth() + 3);
-        break;
-      case 'Bi-Annual':
-        renewal.setUTCMonth(start.getUTCMonth() + 6);
-        break;
-      case 'Annual':
-        renewal.setUTCFullYear(start.getUTCFullYear() + 1);
-        break;
-      case 'Custom':
-        if (customFrequencyDays) {
-          renewal.setUTCDate(start.getUTCDate() + parseInt(customFrequencyDays) + 1);
-        }
-        break;
-      default:
-        renewal.setUTCMonth(start.getUTCMonth() + 1);
+    let renewal = new Date(start);
+
+    // Keep advancing the renewal date until it's in the future or equal to today
+    while (renewal < today) {
+      switch (frequency) {
+        case 'Weekly':
+          renewal.setUTCDate(renewal.getUTCDate() + 7);
+          break;
+        case 'Bi-Weekly':
+          renewal.setUTCDate(renewal.getUTCDate() + 14);
+          break;
+        case 'Monthly':
+          renewal.setUTCMonth(renewal.getUTCMonth() + 1);
+          break;
+        case 'Quarterly':
+          renewal.setUTCMonth(renewal.getUTCMonth() + 3);
+          break;
+        case 'Bi-Annual':
+          renewal.setUTCMonth(renewal.getUTCMonth() + 6);
+          break;
+        case 'Annual':
+          renewal.setUTCFullYear(renewal.getUTCFullYear() + 1);
+          break;
+        case 'Custom':
+          if (customFrequencyDays) {
+            renewal.setUTCDate(renewal.getUTCDate() + parseInt(customFrequencyDays));
+          } else {
+            // If no custom days specified, default to monthly and exit loop
+            renewal.setUTCMonth(renewal.getUTCMonth() + 1);
+          }
+          break;
+        default:
+          renewal.setUTCMonth(renewal.getUTCMonth() + 1);
+      }
     }
 
     return renewal.toISOString().split('T')[0];
