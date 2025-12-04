@@ -66,7 +66,7 @@ class SubscriptionService {
       const daysUntilRenewal = Math.ceil((renewal - today) / (1000 * 60 * 60 * 24));
 
       if (daysUntilRenewal <= 7 && daysUntilRenewal >= 0) {
-        return 'Expiring Soon';
+        return 'Renewing Soon';
       }
       return 'Active';
     };
@@ -76,7 +76,7 @@ class SubscriptionService {
       status: calculateStatus(sub.renewal_date)
     }));
 
-    const activeSubscriptions = subscriptionsWithStatus.filter(sub => sub.status === 'Active');
+    const activeSubscriptions = subscriptionsWithStatus.filter(sub => sub.status === 'Active' || sub.status === 'Renewing Soon');
 
     const getDaysInFrequency = (frequency, customDays) => {
       switch (frequency) {

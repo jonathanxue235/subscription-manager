@@ -37,7 +37,7 @@ export const subscriptions = [
   {
     id: 2,
     name: "Spotify",
-    status: "Expiring Soon",
+    status: "Renewing Soon",
     frequency: "Monthly",
     renewalDate: "Nov 10, 2025",
     cost: "$12.99",

@@ -37,7 +37,7 @@ const SubscriptionList = ({ subscriptions, onDelete }) => {
 
   const getStatusClass = (status) => {
     if (status === 'Active') return 'status-badge status-active';
-    if (status === 'Expiring Soon') return 'status-badge status-warning';
+    if (status === 'Renewing Soon') return 'status-badge status-warning';
     return 'status-badge';
   };
 

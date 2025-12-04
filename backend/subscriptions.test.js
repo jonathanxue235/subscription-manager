@@ -64,7 +64,7 @@ const calculateStatus = (renewalDate) => {
   const daysUntilRenewal = Math.ceil((renewal - today) / (1000 * 60 * 60 * 24));
 
   if (daysUntilRenewal <= 7 && daysUntilRenewal >= 0) {
-    return 'Expiring Soon';
+    return 'Renewing Soon';
   }
   return 'Active';
 };
@@ -505,7 +505,7 @@ describe('GET /api/subscriptions/stats', () => {
 
         const stats = {
           totalMonthlyCost: totalMonthlyCost.toFixed(2),
-          activeSubscriptions: subscriptions.filter(sub => sub.status === 'Active').length,
+          activeSubscriptions: subscriptions.filter(sub => sub.status === 'Active' || sub.status === 'Renewing Soon').length,
           nextRenewal: nextRenewal ? {
             date: nextRenewal.renewal_date,
             name: nextRenewal.name
@@ -600,8 +600,8 @@ describe('GET /api/subscriptions/stats', () => {
       .set('Authorization', `Bearer ${token}`);
 
     expect(response.status).toBe(200);
-    // One Active (futureDate > 7 days), one Expiring Soon (expiringDate <= 7 days)
-    expect(response.body.activeSubscriptions).toBe(1);
+    // One Active (futureDate > 7 days), one Renewing Soon (expiringDate <= 7 days) - both count as active
+    expect(response.body.activeSubscriptions).toBe(2);
   });
 
   test('identifies next renewal correctly', async () => {

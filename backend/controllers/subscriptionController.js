@@ -16,7 +16,7 @@ class SubscriptionController {
         const daysUntilRenewal = Math.ceil((renewal - today) / (1000 * 60 * 60 * 24));
 
         if (daysUntilRenewal <= 7 && daysUntilRenewal >= 0) {
-          return 'Expiring Soon';
+          return 'Renewing Soon';
         }
         return 'Active';
       };

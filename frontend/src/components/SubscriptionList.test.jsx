@@ -50,7 +50,7 @@ describe('SubscriptionList Component', () => {
       id: 'sub-2',
       name: 'Spotify',
       logo: 'S',
-      status: 'Expiring Soon',
+      status: 'Renewing Soon',
       frequency: 'Annual',
       startDate: '2023-06-15',
       renewalDate: '2024-12-05',
@@ -100,10 +100,10 @@ describe('SubscriptionList Component', () => {
       render(<SubscriptionList subscriptions={mockSubscriptions} onDelete={mockOnDelete} />);
 
       const activeStatus = screen.getByText('Active');
-      const expiringStatus = screen.getByText('Expiring Soon');
+      const renewingStatus = screen.getByText('Renewing Soon');
 
       expect(activeStatus).toHaveClass('status-badge', 'status-active');
-      expect(expiringStatus).toHaveClass('status-badge', 'status-warning');
+      expect(renewingStatus).toHaveClass('status-badge', 'status-warning');
     });
 
     test('renders Remove button for each subscription', () => {
