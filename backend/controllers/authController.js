@@ -59,6 +59,7 @@ class AuthController {
     try {
       const { username, monthly_budget, location, primary_curr } = req.body;
       const userId = req.user.userId;
+      const accessToken = req.accessToken;
 
       const updates = {};
       if (username !== undefined) updates.username = username;
@@ -66,7 +67,7 @@ class AuthController {
       if (location !== undefined) updates.location = location;
       if (primary_curr !== undefined) updates.primary_curr = primary_curr;
 
-      const updatedUser = await this.authService.updateProfile(userId, updates);
+      const updatedUser = await this.authService.updateProfile(userId, updates, accessToken);
 
       res.json({
         message: 'Profile updated successfully',

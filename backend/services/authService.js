@@ -126,7 +126,7 @@ class AuthService {
     }
   }
 
-  async updateProfile(userId, updates) {
+  async updateProfile(userId, updates, accessToken = null) {
     const allowedFields = ['username', 'monthly_budget', 'location', 'primary_curr'];
     const filteredUpdates = {};
 
@@ -148,7 +148,7 @@ class AuthService {
       }
     }
 
-    const updatedUser = await this.userRepo.update(userId, filteredUpdates);
+    const updatedUser = await this.userRepo.update(userId, filteredUpdates, accessToken);
     return this._sanitizeUser(updatedUser);
   }
 

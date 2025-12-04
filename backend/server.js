@@ -18,7 +18,7 @@ const helmet = require('helmet');
 
 // Import configuration
 const { getConfig } = require('./config/environment');
-const { createDatabaseClient } = require('./config/database');
+const { createDatabaseClient, createServiceRoleClient } = require('./config/database');
 
 // Import layers
 const UserRepository = require('./repositories/userRepository');
@@ -75,12 +75,15 @@ app.use(express.json());
 // DEPENDENCY INJECTION - Wire all modules together
 // =============================================================================
 
-// 1. Create database client
+// 1. Create database clients
 const dbClient = createDatabaseClient();
+const serviceRoleClient = createServiceRoleClient();
 
 // 2. Create repositories (depend on database client)
-const userRepository = new UserRepository(dbClient);
-const subscriptionRepository = new SubscriptionRepository(dbClient);
+// Pass the factory function so repositories can create RLS-enabled clients
+// UserRepository gets service role client for operations like registration
+const userRepository = new UserRepository(serviceRoleClient, createDatabaseClient);
+const subscriptionRepository = new SubscriptionRepository(dbClient, createDatabaseClient);
 
 // 3. Create services (depend on repositories)
 const authService = new AuthService(userRepository, config.jwtSecret);

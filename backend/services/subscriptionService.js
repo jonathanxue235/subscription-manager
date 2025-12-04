@@ -3,19 +3,19 @@ class SubscriptionService {
     this.repository = subscriptionRepository;
   }
 
-  async getUserSubscriptions(userId) {
-    return await this.repository.findByUserId(userId);
+  async getUserSubscriptions(userId, accessToken = null) {
+    return await this.repository.findByUserId(userId, accessToken);
   }
 
-  async getSubscription(subscriptionId, userId) {
-    const subscription = await this.repository.findById(subscriptionId, userId);
+  async getSubscription(subscriptionId, userId, accessToken = null) {
+    const subscription = await this.repository.findById(subscriptionId, userId, accessToken);
     if (!subscription) {
       throw new Error('Subscription not found');
     }
     return subscription;
   }
 
-  async createSubscription(userId, subscriptionData) {
+  async createSubscription(userId, subscriptionData, accessToken = null) {
     const renewalDate = this.calculateRenewalDate(
       subscriptionData.start_date,
       subscriptionData.frequency,
@@ -38,27 +38,27 @@ class SubscriptionService {
       newSubscription.custom_frequency_days = parseInt(subscriptionData.custom_frequency_days);
     }
 
-    return await this.repository.create(newSubscription);
+    return await this.repository.create(newSubscription, accessToken);
   }
 
-  async updateSubscription(subscriptionId, userId, updates) {
+  async updateSubscription(subscriptionId, userId, updates, accessToken = null) {
     if (updates.start_date || updates.frequency || updates.custom_frequency_days) {
-      const subscription = await this.getSubscription(subscriptionId, userId);
+      const subscription = await this.getSubscription(subscriptionId, userId, accessToken);
       const startDate = updates.start_date || subscription.start_date;
       const frequency = updates.frequency || subscription.frequency;
       const customDays = updates.custom_frequency_days || subscription.custom_frequency_days;
       updates.renewal_date = this.calculateRenewalDate(startDate, frequency, customDays);
     }
 
-    return await this.repository.update(subscriptionId, userId, updates);
+    return await this.repository.update(subscriptionId, userId, updates, accessToken);
   }
 
-  async deleteSubscription(subscriptionId, userId) {
-    await this.repository.delete(subscriptionId, userId);
+  async deleteSubscription(subscriptionId, userId, accessToken = null) {
+    await this.repository.delete(subscriptionId, userId, accessToken);
   }
 
-  async getDashboardStats(userId) {
-    const subscriptions = await this.repository.findByUserId(userId);
+  async getDashboardStats(userId, accessToken = null) {
+    const subscriptions = await this.repository.findByUserId(userId, accessToken);
 
     const calculateStatus = (renewalDate) => {
       const today = new Date();
@@ -132,8 +132,8 @@ class SubscriptionService {
     };
   }
 
-  async getSubscriptionHistory(userId) {
-    const subscriptions = await this.repository.findByUserId(userId);
+  async getSubscriptionHistory(userId, accessToken = null) {
+    const subscriptions = await this.repository.findByUserId(userId, accessToken);
 
     if (subscriptions.length === 0) {
       return [];

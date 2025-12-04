@@ -7,7 +7,8 @@ class SubscriptionController {
   async getAll(req, res) {
     try {
       const userId = req.user.userId;
-      const subscriptions = await this.subscriptionService.getUserSubscriptions(userId);
+      const accessToken = req.accessToken;
+      const subscriptions = await this.subscriptionService.getUserSubscriptions(userId, accessToken);
 
       const calculateStatus = (renewalDate) => {
         const today = new Date();
@@ -35,8 +36,9 @@ class SubscriptionController {
   async getOne(req, res) {
     try {
       const userId = req.user.userId;
+      const accessToken = req.accessToken;
       const { id } = req.params;
-      const subscription = await this.subscriptionService.getSubscription(id, userId);
+      const subscription = await this.subscriptionService.getSubscription(id, userId, accessToken);
       res.json(subscription);
     } catch (error) {
       console.error('Error fetching subscription:', error);
@@ -47,6 +49,7 @@ class SubscriptionController {
   async create(req, res) {
     try {
       const userId = req.user.userId;
+      const accessToken = req.accessToken;
       const subscriptionData = req.body;
 
       const budgetCheck = await this.budgetService.checkBudgetLimit(userId, subscriptionData);
@@ -61,7 +64,7 @@ class SubscriptionController {
         });
       }
 
-      const newSubscription = await this.subscriptionService.createSubscription(userId, subscriptionData);
+      const newSubscription = await this.subscriptionService.createSubscription(userId, subscriptionData, accessToken);
       res.status(201).json(newSubscription);
     } catch (error) {
       console.error('Error creating subscription:', error);
@@ -72,10 +75,11 @@ class SubscriptionController {
   async update(req, res) {
     try {
       const userId = req.user.userId;
+      const accessToken = req.accessToken;
       const { id } = req.params;
       const updates = req.body;
 
-      const updatedSubscription = await this.subscriptionService.updateSubscription(id, userId, updates);
+      const updatedSubscription = await this.subscriptionService.updateSubscription(id, userId, updates, accessToken);
       res.json(updatedSubscription);
     } catch (error) {
       console.error('Error updating subscription:', error);
@@ -86,9 +90,10 @@ class SubscriptionController {
   async delete(req, res) {
     try {
       const userId = req.user.userId;
+      const accessToken = req.accessToken;
       const { id } = req.params;
 
-      await this.subscriptionService.deleteSubscription(id, userId);
+      await this.subscriptionService.deleteSubscription(id, userId, accessToken);
       res.status(204).send();
     } catch (error) {
       console.error('Error deleting subscription:', error);
@@ -99,7 +104,8 @@ class SubscriptionController {
   async getDashboard(req, res) {
     try {
       const userId = req.user.userId;
-      const stats = await this.subscriptionService.getDashboardStats(userId);
+      const accessToken = req.accessToken;
+      const stats = await this.subscriptionService.getDashboardStats(userId, accessToken);
       res.json(stats);
     } catch (error) {
       console.error('Error fetching dashboard:', error);
@@ -110,7 +116,8 @@ class SubscriptionController {
   async getHistory(req, res) {
     try {
       const userId = req.user.userId;
-      const history = await this.subscriptionService.getSubscriptionHistory(userId);
+      const accessToken = req.accessToken;
+      const history = await this.subscriptionService.getSubscriptionHistory(userId, accessToken);
       res.json(history);
     } catch (error) {
       console.error('Error fetching history:', error);

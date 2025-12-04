@@ -4,8 +4,18 @@
  */
 
 class UserRepository {
-  constructor(dbClient) {
+  constructor(dbClient, createDbClientFn = null) {
     this.db = dbClient;
+    this.createDbClient = createDbClientFn;
+  }
+
+  _getClient(accessToken = null) {
+    // If access token is provided and we have the factory function, create a new client
+    if (accessToken && this.createDbClient) {
+      return this.createDbClient(accessToken);
+    }
+    // Otherwise use the default client (for operations that don't need RLS)
+    return this.db;
   }
 
   async findByEmail(email) {
@@ -50,8 +60,9 @@ class UserRepository {
     return data;
   }
 
-  async findById(id) {
-    const { data, error } = await this.db
+  async findById(id, accessToken = null) {
+    const client = this._getClient(accessToken);
+    const { data, error } = await client
       .from('users')
       .select('*')
       .eq('id', id)
@@ -64,8 +75,9 @@ class UserRepository {
     return data;
   }
 
-  async update(id, updates) {
-    const { data, error } = await this.db
+  async update(id, updates, accessToken = null) {
+    const client = this._getClient(accessToken);
+    const { data, error } = await client
       .from('users')
       .update(updates)
       .eq('id', id)

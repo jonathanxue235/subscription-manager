@@ -4,13 +4,23 @@
  */
 
 class SubscriptionRepository {
-  constructor(dbClient) {
+  constructor(dbClient, createDbClientFn = null) {
     this.db = dbClient;
+    this.createDbClient = createDbClientFn;
   }
 
+  _getClient(accessToken = null) {
+    // If access token is provided and we have the factory function, create a new client
+    if (accessToken && this.createDbClient) {
+      return this.createDbClient(accessToken);
+    }
+    // Otherwise use the default client (for operations that don't need RLS)
+    return this.db;
+  }
 
-  async findByUserId(userId) {
-    const { data, error } = await this.db
+  async findByUserId(userId, accessToken = null) {
+    const client = this._getClient(accessToken);
+    const { data, error } = await client
       .from('subscriptions')
       .select('*')
       .eq('user_id', userId)
@@ -24,8 +34,9 @@ class SubscriptionRepository {
   }
 
 
-  async findById(subscriptionId, userId) {
-    const { data, error } = await this.db
+  async findById(subscriptionId, userId, accessToken = null) {
+    const client = this._getClient(accessToken);
+    const { data, error } = await client
       .from('subscriptions')
       .select('*')
       .eq('id', subscriptionId)
@@ -40,9 +51,10 @@ class SubscriptionRepository {
     return data;
   }
 
-  
-  async create(subscriptionData) {
-    const { data, error } = await this.db
+
+  async create(subscriptionData, accessToken = null) {
+    const client = this._getClient(accessToken);
+    const { data, error } = await client
       .from('subscriptions')
       .insert([subscriptionData])
       .select()
@@ -56,8 +68,9 @@ class SubscriptionRepository {
   }
 
 
-  async update(subscriptionId, userId, updates) {
-    const { data, error } = await this.db
+  async update(subscriptionId, userId, updates, accessToken = null) {
+    const client = this._getClient(accessToken);
+    const { data, error } = await client
       .from('subscriptions')
       .update(updates)
       .eq('id', subscriptionId)
@@ -72,8 +85,9 @@ class SubscriptionRepository {
     return data;
   }
 
-  async delete(subscriptionId, userId) {
-    const { error } = await this.db
+  async delete(subscriptionId, userId, accessToken = null) {
+    const client = this._getClient(accessToken);
+    const { error } = await client
       .from('subscriptions')
       .delete()
       .eq('id', subscriptionId)

@@ -15,6 +15,7 @@ function createAuthMiddleware(authService) {
       const decoded = await authService.verifyToken(token);
 
       req.user = decoded;
+      req.accessToken = token; // Store the token for RLS
       next();
     } catch (error) {
       return res.status(403).json({ error: error.message });
