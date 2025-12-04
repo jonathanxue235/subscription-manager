@@ -50,21 +50,34 @@ class SubscriptionController {
     try {
       const userId = req.user.userId;
       const accessToken = req.accessToken;
-      const subscriptionData = req.body;
+      const { bypassBudgetCheck, ...subscriptionData } = req.body;
 
-      const budgetCheck = await this.budgetService.checkBudgetLimit(userId, subscriptionData);
+      console.log('CREATE SUBSCRIPTION - bypassBudgetCheck:', bypassBudgetCheck);
+      console.log('CREATE SUBSCRIPTION - Full body:', req.body);
+      console.log('CREATE SUBSCRIPTION - Subscription data:', subscriptionData);
 
-      if (budgetCheck.exceedsLimit) {
-        return res.status(200).json({
-          warning: true,
-          message: budgetCheck.message,
-          currentTotal: budgetCheck.currentTotal,
-          newTotal: budgetCheck.newTotal,
-          budgetLimit: budgetCheck.budgetLimit
-        });
+      // only check budget if not bypassed (user hasn't confirmed)
+      if (!bypassBudgetCheck) {
+        console.log('Budget check NOT bypassed - checking budget...');
+        const budgetCheck = await this.budgetService.checkBudgetLimit(userId, subscriptionData);
+
+        if (budgetCheck.exceedsLimit) {
+          console.log('Budget exceeded - returning warning');
+          return res.status(200).json({
+            warning: true,
+            message: budgetCheck.message,
+            currentTotal: budgetCheck.currentTotal,
+            newTotal: budgetCheck.newTotal,
+            budgetLimit: budgetCheck.budgetLimit
+          });
+        }
+      } else {
+        console.log('Budget check BYPASSED - creating subscription directly');
       }
 
+      console.log('Creating subscription...');
       const newSubscription = await this.subscriptionService.createSubscription(userId, subscriptionData, accessToken);
+      console.log('Subscription created successfully:', newSubscription);
       res.status(201).json(newSubscription);
     } catch (error) {
       console.error('Error creating subscription:', error);
