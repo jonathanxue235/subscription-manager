@@ -1,3 +1,7 @@
+-- =====================================================
+-- 1. CREATE TABLES
+-- =====================================================
+
 -- Create users table for custom authentication
 CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -63,3 +67,82 @@ CREATE INDEX IF NOT EXISTS idx_subscriptions_renewal_date ON subscriptions(renew
 DROP TRIGGER IF EXISTS update_subscriptions_updated_at ON subscriptions;
 CREATE TRIGGER update_subscriptions_updated_at BEFORE UPDATE ON subscriptions
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
+
+-- =====================================================
+-- 2. CREATE HELPER FUNCTION TO EXTRACT USER ID FROM JWT
+-- =====================================================
+
+-- This function extracts the userId from your custom JWT
+-- The JWT is passed in the Authorization header by your backend
+-- NOTE: Using public schema since we can't modify the auth schema
+CREATE OR REPLACE FUNCTION public.get_current_user_id() RETURNS UUID AS $$
+  SELECT COALESCE(
+    -- Try to get userId from JWT claims (your custom auth)
+    (current_setting('request.jwt.claims', true)::json->>'userId')::uuid,
+    -- Fallback to null if not authenticated
+    NULL
+  );
+$$ LANGUAGE SQL STABLE;
+
+-- =====================================================
+-- 3. USERS TABLE POLICIES
+-- =====================================================
+
+-- Users can only view their own profile
+CREATE POLICY "Users can view own profile"
+  ON users
+  FOR SELECT
+  USING (id = public.get_current_user_id());
+
+-- Users can only update their own profile
+CREATE POLICY "Users can update own profile"
+  ON users
+  FOR UPDATE
+  USING (id = public.get_current_user_id())
+  WITH CHECK (id = public.get_current_user_id());
+
+-- Allow user creation during registration (no auth required)
+-- This is needed for the signup endpoint
+CREATE POLICY "Allow user registration"
+  ON users
+  FOR INSERT
+  WITH CHECK (true);
+
+-- Prevent users from deleting their own accounts via direct DB access
+-- (Use a backend endpoint if you want to support account deletion)
+CREATE POLICY "Prevent user deletion"
+  ON users
+  FOR DELETE
+  USING (false);
+
+-- =====================================================
+-- 4. SUBSCRIPTIONS TABLE POLICIES
+-- =====================================================
+
+-- Users can only view their own subscriptions
+CREATE POLICY "Users can view own subscriptions"
+  ON subscriptions
+  FOR SELECT
+  USING (user_id = public.get_current_user_id());
+
+-- Users can only create subscriptions for themselves
+CREATE POLICY "Users can create own subscriptions"
+  ON subscriptions
+  FOR INSERT
+  WITH CHECK (user_id = public.get_current_user_id());
+
+-- Users can only update their own subscriptions
+CREATE POLICY "Users can update own subscriptions"
+  ON subscriptions
+  FOR UPDATE
+  USING (user_id = public.get_current_user_id())
+  WITH CHECK (user_id = public.get_current_user_id());
+
+-- Users can only delete their own subscriptions
+CREATE POLICY "Users can delete own subscriptions"
+  ON subscriptions
+  FOR DELETE
+  USING (user_id = public.get_current_user_id());
