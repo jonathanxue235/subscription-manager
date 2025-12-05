@@ -190,9 +190,9 @@ app.post('/api/budget/check', authenticateToken, async (req, res) => {
 
     const result = await budgetService.checkBudgetLimit(req.user.userId, {
       cost,
-      billing_cycle: frequency.toLowerCase(),
+      billing_cycle: frequency,
       custom_frequency_days: customFrequencyDays
-    });
+    }, req.accessToken);
 
     if (!result.exceedsLimit) {
       return res.json({
@@ -217,14 +217,11 @@ app.post('/api/budget/check', authenticateToken, async (req, res) => {
   }
 });
 
-// =============================================================================
-// START SERVER
-// =============================================================================
 
 app.listen(config.port, () => {
-  console.log(`✅ Server running on http://localhost:${config.port}`);
-  console.log(`✅ Environment: ${config.nodeEnv}`);
-  console.log(`✅ Modular architecture initialized!`);
+  console.log(`Server running on http://localhost:${config.port}`);
+  console.log(`Environment: ${config.nodeEnv}`);
+  console.log(`Modular architecture initialized!`);
 });
 
 // Export for testing

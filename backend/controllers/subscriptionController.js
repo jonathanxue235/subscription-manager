@@ -59,7 +59,12 @@ class SubscriptionController {
       // only check budget if not bypassed (user hasn't confirmed)
       if (!bypassBudgetCheck) {
         console.log('Budget check NOT bypassed - checking budget...');
-        const budgetCheck = await this.budgetService.checkBudgetLimit(userId, subscriptionData);
+        // Map the subscription data fields to match what budgetService expects
+        const budgetCheck = await this.budgetService.checkBudgetLimit(userId, {
+          cost: subscriptionData.cost,
+          billing_cycle: subscriptionData.frequency,
+          custom_frequency_days: subscriptionData.custom_frequency_days
+        }, accessToken);
 
         if (budgetCheck.exceedsLimit) {
           console.log('Budget exceeded - returning warning');
