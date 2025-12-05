@@ -42,6 +42,12 @@ const AddSubscriptionModal = ({ isOpen, onClose, onSuccess }) => {
 
       // check budget before creating subscription
       try {
+        console.log('BUDGET CHECK - Calling budgetService.checkBudget with:', {
+          cost: formData.cost,
+          frequency: formData.frequency,
+          custom_frequency_days: formData.custom_frequency_days
+        });
+
         const budgetCheck = await budgetService.checkBudget(
           formData.cost,
           formData.frequency,
@@ -54,6 +60,8 @@ const AddSubscriptionModal = ({ isOpen, onClose, onSuccess }) => {
           setShowBudgetConfirm(true);
           setLoading(false);
           return;
+        } else {
+          console.log('BUDGET CHECK - Budget OK, proceeding with subscription creation');
         }
       } catch (budgetErr) {
         console.error('Error checking budget:', budgetErr);
