@@ -1,3 +1,8 @@
+/*
+Chatgpt 5.1
+Can you review my code and help me understand why the highlighted text is not contiguous and has gaps before and after the highlighted sections?
+*/
+
 import React from "react";
 
 export default function HighlightedText({ text, matches }) {

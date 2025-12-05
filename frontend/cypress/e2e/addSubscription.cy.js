@@ -1,18 +1,21 @@
+/*
+Chatgpt 5.1 
+Generate a test using cypress to register a new user, and then add a subscription to the system. (I uploaded screenshots of what the application looks)
+Reprompted to fix errors with not waiting long enough between steps:
+Can you fix an issue where it doesn't see the dashboard after registering?
+
+This code was then refactored by me (KyleArffy) after creating helper functions for registering and adding subscriptions etc.
+*/
+
 describe("Add Subscription (E2E)", () => {
     const email = `sub${Date.now()}@example.com`;
     const username = "Test123";
     const password = "Test123!";
   
     beforeEach(() => {
-      cy.visit("http://localhost:3000/signup");
-      cy.get('input[placeholder="Email"]').type(email);
-      cy.get('input[placeholder="Username"]').type(username);
-      cy.get('input[placeholder="Password"]').type(password);
-      cy.get('input[placeholder="Confirm Password"]').type(password);
-      cy.get('button[type="submit"]').click();
-      cy.url({ timeout: 8000 }).should("include", "/dashboard");
+      cy.register(email, username, password);
     });
-  
+
     it("adds a subscription successfully", () => {
       cy.addSubscription("Netflix", "2025-12-01", "10.00");
 

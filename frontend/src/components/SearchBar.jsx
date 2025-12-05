@@ -1,3 +1,8 @@
+/*
+Chatgpt 5.1
+Can you help me implement fuzzy search into my existing searchbar? What are some libraries I could use and generate some example code that shows me how to use the library, and do things such as set weightings
+*/
+
 import React, { useState, useEffect } from "react";
 import Fuse from "fuse.js";
 
