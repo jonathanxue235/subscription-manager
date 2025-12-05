@@ -1,5 +1,10 @@
 @import url("https://fonts.googleapis.com/css?family=Lora:700|Manrope:400,500,600,700&display=swap");
 
+/*
+I told Claude Code:
+Help me gather all the CSS from the files and then remove duplicates
+*/
+
 /* ========== CSS Variables ========== */
 :root {
   --bg-color: #f4f7fc;

@@ -3,6 +3,12 @@ import authService from '../services/authService';
 import storage from '../utils/storage';
 import api from '../services/api';
 
+/*
+I did pair programming with Claude Code here:
+- I want to implement a authentication context - teach me how to do it?
+- How do I propagate this change to other pages?
+*/
+
 /**
  * AuthContext - Centralized authentication state management
  *

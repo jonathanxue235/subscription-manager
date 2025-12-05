@@ -7,6 +7,11 @@ import api from "../services/api";
 import storage from "../utils/storage";
 import "../common.css";
 
+/*
+I implemented the functionalities and then told Claude Code:
+Standardize the UI with the other pages
+*/
+
 function UserProfilePage() {
   const navigate = useNavigate();
   const { user, logout, loading, refreshUser } = useAuth();
