@@ -3,22 +3,9 @@ describe("User Registration (JWT Auto Login)", () => {
     const username = "Test123";
     const password = "Test123!";
   
-    it("registers a new user, stores JWT, and redirects to dashboard", () => {
-      cy.visit("http://localhost:3000/signup");
-  
-      cy.get('input[placeholder="Email"]').type(email);
-      cy.get('input[placeholder="Username"]').type(username);
-      cy.get('input[placeholder="Password"]').type(password);
-      cy.get('input[placeholder="Confirm Password"]').type(password);
-  
-      cy.intercept("POST", "http://localhost:5001/api/register").as("register");
-  
-      cy.get('button[type="submit"]').click();
-  
-      // Wait for backend to respond
-      cy.wait("@register").its("response.statusCode")
-        .should("be.oneOf", [200, 201]);
-  
+    it("registers a new user and redirects to dashboard", () => {
+      cy.register(email, username, password);
+
       // Frontend auto-navigates to dashboard
       cy.url({ timeout: 8000 }).should("include", "/dashboard");
   
@@ -32,6 +19,14 @@ describe("User Registration (JWT Auto Login)", () => {
         expect(tokenKey, "JWT token key should exist").to.exist;
         expect(win.localStorage.getItem(tokenKey)).to.be.a("string");
       });
+    });
+    it("successfully logs in an existing user", () => {
+      const email = "123@hello.com";
+      const password = "Ab*12345";
+  
+      cy.login(email, password);
+  
+      cy.contains("Dashboard").should("exist");
     });
   });
   

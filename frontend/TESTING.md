@@ -28,12 +28,26 @@ sudo apt install -y \
 
 Windows and Mac users should already have these installed. 
 
+Make sure you start the frontend and backend:
+```bash
+cd ~/subscription-manager/frontend
+npm start
+```
+
+Start the backend in testing mode: 
+```bash
+cd ~/subscription-manager/backend
+npm start:test
+```
+
 To Run the tests using GUI:
 ```bash
-npm run cypress
+npx cypress open
 ```
+Then Navigate to E2E Testing, select Electron and finally select the test you wish to perform. 
+
 
 To run Headless:
 ```bash
-npm run cypress:run
+npx run cypress:run
 ```
