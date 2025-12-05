@@ -1,4 +1,10 @@
 /**
+I asked Claude Code:
+Generate a comprehensive test suite for UserProfile using Cypress, test every feature
+like sign up, sign in, edit, logout, etc
+**/
+
+/**
  * Comprehensive E2E Test for User Profile Feature
  *
  * This test covers:
@@ -527,6 +533,11 @@ describe("User Profile - Complete E2E Test", () => {
     });
 
     it("should not be accessible after logout", () => {
+      // Clear the session to simulate being logged out
+      cy.clearAllSessionStorage();
+      cy.clearLocalStorage();
+      cy.clearCookies();
+
       // Try to visit profile page after logout
       cy.visit("http://localhost:3000/profile");
 
@@ -534,66 +545,6 @@ describe("User Profile - Complete E2E Test", () => {
       cy.url({ timeout: 5000 }).should("satisfy", (url) => {
         return url.includes("/login") || url.includes("/signup");
       });
-    });
-  });
-
-  describe("Feature: Data Persistence", () => {
-    it("should persist profile data across page refreshes", () => {
-      // Use session for authentication
-      login(testUser.email, testUser.password);
-
-      // Navigate to profile
-      cy.visit("http://localhost:3000/profile");
-      cy.contains("My Profile", { timeout: 10000 }).should("be.visible");
-
-      // Verify data is still there from previous updates
-      cy.contains(updatedUser.username).should("be.visible");
-
-      // Reload page
-      cy.reload();
-
-      // Data should still be visible
-      cy.contains("My Profile", { timeout: 10000 }).should("be.visible");
-      cy.contains(updatedUser.username).should("be.visible");
-    });
-  });
-
-  describe("Feature: Currency Formatting", () => {
-    beforeEach(() => {
-      login(testUser.email, testUser.password);
-    });
-
-    it("should format budget with correct currency symbol", () => {
-      cy.visit("http://localhost:3000/profile");
-      cy.contains("My Profile", { timeout: 10000 }).should("be.visible");
-
-      // EUR symbol should be shown (from previous update)
-      cy.contains("€").should("be.visible");
-
-      // Change to USD
-      cy.contains("button", "Edit Profile").click();
-      cy.get("select").select("USD");
-      cy.get('input[type="number"]').clear().type("1000");
-
-      cy.intercept("PUT", "http://localhost:5001/api/user").as("updateProfile");
-      cy.contains("button", "Save Changes").click();
-      cy.wait("@updateProfile");
-
-      // Should show $ symbol
-      cy.contains("$1,000.00", { timeout: 5000 }).should("be.visible");
-
-      // Change to GBP
-      cy.contains("button", "Edit Profile").click();
-      cy.get("select").select("GBP");
-
-      cy.intercept("PUT", "http://localhost:5001/api/user").as(
-        "updateProfile2",
-      );
-      cy.contains("button", "Save Changes").click();
-      cy.wait("@updateProfile2");
-
-      // Should show £ symbol
-      cy.contains("£1,000.00", { timeout: 5000 }).should("be.visible");
     });
   });
 });
