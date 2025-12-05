@@ -103,8 +103,17 @@ const authenticateToken = createAuthMiddleware(authService);
 
 // Authentication routes
 // Apply `authLimiter` to authentication endpoints
-app.post('/api/register', authLimiter, (req, res) => authController.register(req, res));
-app.post('/api/login', authLimiter, (req, res) => authController.login(req, res));
+// Disable rate limiting in test mode
+const useLimiter = process.env.NODE_ENV !== "test";
+
+if (useLimiter) {
+  app.post('/api/register', authLimiter, (req, res) => authController.register(req, res));
+  app.post('/api/login', authLimiter, (req, res) => authController.login(req, res));
+} else {
+  console.warn("Rate limiting disabled for Cypress tests");
+  app.post('/api/register', (req, res) => authController.register(req, res));
+  app.post('/api/login', (req, res) => authController.login(req, res));
+}
 
 // Protected routes (require authentication)
 app.get('/api/protected', authenticateToken, (req, res) =>
