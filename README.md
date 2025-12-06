@@ -8,6 +8,11 @@ Subscription Manager is an easy-to-use website for users to keep track of all th
 
 ![database_diagram](./Database.png)
 
+
+## Class Diagram
+![class_diagram](./classdiagram.png)
+
+
 ### Overview
 
 Our application uses a PostgreSQL database hosted on Supabase with two main tables: `users` and `subscriptions`.
