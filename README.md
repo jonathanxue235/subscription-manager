@@ -12,6 +12,8 @@ Subscription Manager is an easy-to-use website for users to keep track of all th
 ## Class Diagram
 ![class_diagram](./classdiagram.png)
 
+## Component Diagram
+![component_diagram](./component_diagram.png)
 
 ### Overview
 
