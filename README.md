@@ -206,3 +206,7 @@ npm start
 The frontend will run on http://localhost:3000
 
 The backend will run on http://localhost:5001 (or your configured PORT)
+
+
+### Testing with Cypress
+Find instructions to run the cypress E2E tests in cypress/TESTING.md
