@@ -7,24 +7,32 @@ describe('XSS safety test — attempt to exfiltrate token', () => {
     cy.intercept('GET', 'http://localhost:5001/api/subscriptions/stats', { statusCode: 200, body: { totalMonthlyCost: '0.00', activeSubscriptions: 0 } }).as('getStats');
     cy.intercept('GET', 'http://localhost:5001/api/subscriptions/history', { statusCode: 200, body: [] }).as('getHistory');
 
-    // Provide a token before the app loads so an injected script could read it
-    cy.visit('http://localhost:3000/dashboard', {
-      onBeforeLoad(win) {
-        win.localStorage.setItem('token', TOKEN);
-      }
-    });
+    // Stub the login endpoint to return a token for the UI login flow
+    cy.intercept('POST', 'http://localhost:5001/api/login', (req) => {
+      req.reply({
+        statusCode: 200,
+        body: {
+          token: TOKEN,
+          user: { id: 1, email: 'john@email.com', name: 'John' }
+        }
+      });
+    }).as('loginReq');
+
+    // Perform a UI login so the app stores the token in localStorage naturally
+    cy.login('john@email.com', 'Password1!');
   });
 
   it('injects script as subscription name and checks for token exfiltration', () => {
     const payload = "<script>window.__xss_test_token = localStorage.getItem('token')</script>";
 
-    // Open the Add Subscription modal
-    cy.contains('button', '+ Add Subscription').filter(':visible').click();
+    // Open the Add Subscription modal (match without relying on leading whitespace or plus sign)
+    cy.contains('button', 'Add Subscription').filter(':visible').click();
 
     // Fill the form inside the modal
     cy.get('div[style*="background-color: white"]').filter(':visible').within(() => {
       cy.get('input[placeholder="e.g., Netflix"]').type(payload);
-      cy.get('select').select('Monthly');
+      // The modal contains two <select> elements (frequency and card). Target the first one (frequency).
+      cy.get('select').eq(0).select('Monthly');
       cy.get('input[type="date"]').type('2025-12-01');
       cy.get('input[placeholder="0.00"]').clear().type('0.00');
 
@@ -59,8 +67,11 @@ describe('XSS safety test — attempt to exfiltrate token', () => {
     // it would set window.__xss_test_token to the token value. We fail the test explicitly if that happens.
     cy.window().then((win) => {
       if (win.__xss_test_token) {
+        cy.log(`XSS detected! window.__xss_test_token = ${win.__xss_test_token}`);
+        // Fail the test explicitly if the token was exfiltrated
         throw new Error(`XSS detected! window.__xss_test_token = ${win.__xss_test_token}`);
       } else {
+        cy.log('No XSS detected — attack failed to exfiltrate token');
         expect(win.__xss_test_token).to.be.undefined;
       }
     });
