@@ -1,3 +1,16 @@
+/*
+* AddSubscriptionModal.test.jsx
+* Tests for AddSubscriptionModal component
+*/
+
+/*
+* Prompt for Claude Code:
+  You are an expert Software Engineer following all of the software construction
+  principles. Given the following AddSubscriptionModal component, please write a very detailed
+  and comprehensive test suite, testing its functionality and edge cases to ensure that 
+  subscriptions are being correctly added and managed. If you have any questions before
+  implementing, please ask. 
+*/
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -31,7 +44,7 @@ describe('AddSubscriptionModal Component', () => {
   describe('Rendering', () => {
     test('renders modal when isOpen is true', () => {
       render(<AddSubscriptionModal isOpen={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />);
-      
+
       expect(screen.getByText('Add Subscription')).toBeInTheDocument();
       expect(screen.getByLabelText(/Name/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/Frequency/i)).toBeInTheDocument();
@@ -41,13 +54,13 @@ describe('AddSubscriptionModal Component', () => {
 
     test('does not render when isOpen is false', () => {
       const { container } = render(<AddSubscriptionModal isOpen={false} onClose={mockOnClose} onSuccess={mockOnSuccess} />);
-      
+
       expect(container.firstChild).toBeNull();
     });
 
     test('renders all frequency options', () => {
       render(<AddSubscriptionModal isOpen={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />);
-      
+
       const frequencySelect = screen.getByLabelText(/Frequency/i);
       expect(frequencySelect).toHaveTextContent('Weekly');
       expect(frequencySelect).toHaveTextContent('Bi-Weekly');
@@ -60,14 +73,14 @@ describe('AddSubscriptionModal Component', () => {
 
     test('shows custom frequency input when Custom is selected', () => {
       render(<AddSubscriptionModal isOpen={true} onClose={mockOnClose} onSuccess={mockOnSuccess} />);
-      
+
       // Initially should not show custom frequency input
       expect(screen.queryByLabelText(/Custom Frequency/i)).not.toBeInTheDocument();
-      
+
       // Select Custom frequency
       const frequencySelect = screen.getByLabelText(/Frequency/i);
       fireEvent.change(frequencySelect, { target: { value: 'Custom' } });
-      
+
       // Now should show custom frequency input
       expect(screen.getByLabelText(/Custom Frequency/i)).toBeInTheDocument();
     });
@@ -173,7 +186,7 @@ describe('AddSubscriptionModal Component', () => {
     });
 
     test('displays loading state during submission', async () => {
-      global.fetch.mockImplementationOnce(() => 
+      global.fetch.mockImplementationOnce(() =>
         new Promise((resolve) => setTimeout(() => resolve({
           ok: true,
           json: async () => ({ id: 'sub-123' })
@@ -345,7 +358,7 @@ describe('AddSubscriptionModal Component', () => {
     });
 
     test('disables buttons during submission', async () => {
-      global.fetch.mockImplementationOnce(() => 
+      global.fetch.mockImplementationOnce(() =>
         new Promise((resolve) => setTimeout(() => resolve({
           ok: true,
           json: async () => ({ id: 'sub-123' })

@@ -1,3 +1,7 @@
+/*
+* SubscriptionController.js
+* Controller for subscription management
+*/
 class SubscriptionController {
   constructor(subscriptionService, budgetService) {
     this.subscriptionService = subscriptionService;

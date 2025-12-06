@@ -1,3 +1,7 @@
+/*
+* SubscriptionService.js
+* Service for subscription management, which includes adding, editing, deleting, and getting subscriptions
+*/
 class SubscriptionService {
   constructor(subscriptionRepository) {
     this.repository = subscriptionRepository;
@@ -16,6 +20,7 @@ class SubscriptionService {
   }
 
   async createSubscription(userId, subscriptionData, accessToken = null) {
+    // Calculate the renewal date based on the start date, frequency, and custom frequency days
     const renewalDate = this.calculateRenewalDate(
       subscriptionData.start_date,
       subscriptionData.frequency,
@@ -245,11 +250,11 @@ class SubscriptionService {
   calculateRenewalDate(startDate, frequency, customFrequencyDays = null) {
     const start = new Date(startDate);
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Reset time to start of day for comparison
+    today.setHours(0, 0, 0, 0);
 
     let renewal = new Date(start);
 
-    // Keep advancing the renewal date until it's in the future or equal to today
+    // Keep updating the renewal date until it's in the future or equal to today
     while (renewal < today) {
       switch (frequency) {
         case 'Weekly':

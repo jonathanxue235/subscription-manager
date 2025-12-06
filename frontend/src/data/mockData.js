@@ -1,11 +1,9 @@
-// src/data/mockData.js
 export const stats = [
   { label: "Total Monthly Cost", value: "$75.96" },
   { label: "Active Subscriptions", value: "4" },
   { label: "Next Renewal", value: "Nov 10, 2025", subtext: "Spotify" },
 ];
 
-// Expanded data to support 1M, 3M, 6M, 1Y, MAX filters
 export const chartData = [
   { name: 'Jan 24', cost: 45 },
   { name: 'Feb 24', cost: 45 },

@@ -92,12 +92,12 @@ const SubscriptionList = ({ subscriptions, onDelete }) => {
     const num = parseFloat(String(cost).replace(/[^0-9.-]+/g, ""));
     return Number.isFinite(num) ? num : 0;
   };
-  
+
   const parseDate = (str) => {
     const d = new Date(str);
     return isNaN(d) ? null : d;
   };
-  
+
   const handleCancelDelete = () => {
     setConfirmDelete(null);
     setError(null);
@@ -106,16 +106,16 @@ const SubscriptionList = ({ subscriptions, onDelete }) => {
   const getMatches = (sub, key) => {
     return sub._matches?.find((m) => m.key === key)?.indices || [];
   };
-    
+
   const toggleSortDirection = () => {
-    setSortByDate(null); 
+    setSortByDate(null);
     setSortDirection((prev) =>
       prev === null ? "desc" : prev === "desc" ? "asc" : "desc"
     );
   };
 
   const toggleSortByDate = () => {
-    setSortDirection(null); 
+    setSortDirection(null);
     setSortByDate((prev) =>
       prev === null ? "desc" : prev === "desc" ? "asc" : "desc"
     );
@@ -129,16 +129,16 @@ const SubscriptionList = ({ subscriptions, onDelete }) => {
   );
 
   const sortedSubscriptions = filteredSubscriptions.slice();
-    if (sortByDate) {
-      sortedSubscriptions.sort((a, b) => {
-        const da = parseDate(a.renewalDate);
-        const db = parseDate(b.renewalDate);
+  if (sortByDate) {
+    sortedSubscriptions.sort((a, b) => {
+      const da = parseDate(a.renewalDate);
+      const db = parseDate(b.renewalDate);
 
-        if (!da || !db) return 0;
+      if (!da || !db) return 0;
 
-        return sortByDate === "asc" ? da - db : db - da;
-      });
-    }
+      return sortByDate === "asc" ? da - db : db - da;
+    });
+  }
   if (sortDirection) {
     sortedSubscriptions.sort((a, b) => {
       const ca = parseCost(a.cost);
@@ -147,7 +147,7 @@ const SubscriptionList = ({ subscriptions, onDelete }) => {
       return sortDirection === 'asc' ? ca - cb : cb - ca;
     });
   }
-  
+
   return (
     <div className="table-container">
       <SearchBar
@@ -181,8 +181,8 @@ const SubscriptionList = ({ subscriptions, onDelete }) => {
                   {sortByDate === "asc"
                     ? "▲"
                     : sortByDate === "desc"
-                    ? "▼"
-                    : "⇅"}
+                      ? "▼"
+                      : "⇅"}
                 </button>
               </div>
             </th>
@@ -452,7 +452,7 @@ const SubscriptionList = ({ subscriptions, onDelete }) => {
         </div>
       )}
 
-      {/* Edit Modal */}
+      { }
       <EditSubscriptionModal
         isOpen={!!editSubscription}
         onClose={() => setEditSubscription(null)}
