@@ -8,13 +8,6 @@ Subscription Manager is an easy-to-use website for users to keep track of all th
 
 ![database_diagram](./Database.png)
 
-
-## Class Diagram
-![class_diagram](./classdiagram.png)
-
-## Component Diagram
-![component_diagram](./component_diagram.png)
-
 ### Overview
 
 Our application uses a PostgreSQL database hosted on Supabase with two main tables: `users` and `subscriptions`.
@@ -70,6 +63,42 @@ Stores subscription details for each user.
 **Relationships:**
 
 - Many-to-One with users table (ON DELETE CASCADE - deleting a user removes all their subscriptions)
+
+
+## Class Diagram
+![class_diagram](./classdiagram.png)
+
+This demonstrates the Controller → Middleware → Service → Repository → Database structure
+
+#### Controller Layer
+- SubscriptionController
+- AuthController
+
+#### Middleware Layer
+- AuthMiddleware
+
+#### Service Layer
+- AuthService
+- SubscriptionService
+- BudgetService
+
+#### Repository Layer
+- SubscriptionRepository
+- UserRepository
+
+## Component Diagram
+![component_diagram](./component_diagram.png)
+
+#### Frontend
+- Frontend App (React Shell): entry point, routing, shared layout, providers
+- Auth UI and Context: authentication screens and session states
+- Subscription Dashboard: main feature screens for subscription management and budgeting 
+
+#### Backend
+- API Server (express + middleware): IAuthAPI, ISubscriptionAPI, IBudgetAPI
+- Domain/Application Services implement business logic behind the APIs like AuthService → IAuthService, SubscriptionService → ISubscriptionService, BudgetService → IBudgetService 
+- Repositories (Data access): UserRepository → IUserRepository, SubscriptionRepository → ISubscriptionRepository
+- Infrastructure: DatabaseClient → IDatabaseClient
 
 ## How to test our app (SPECIFICALLY FOR TESTING - THE FULL LOCAL SETUP IS BELOW)
 
