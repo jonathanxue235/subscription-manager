@@ -9,9 +9,9 @@ import { useAuth } from './contexts/AuthContext';
 
 // Component to handle root path redirect based on auth status
 function RootRedirect() {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div style={{
         display: 'flex',

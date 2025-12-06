@@ -1,3 +1,16 @@
+/*
+* SubscriptionList.test.jsx
+* Tests for SubscriptionList component
+*/
+
+/*
+* Prompt for Claude Code:
+  You are an expert Software Engineer following all of the software construction
+  principles. Given the following SubscriptionList component, please write a very detailed
+  and comprehensive test suite, testing its functionality and edge cases to ensure that 
+  subscriptions are being correctly displayed and managed. If you have any questions before
+  implementing, please ask. 
+*/
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -242,7 +255,7 @@ describe('SubscriptionList Component', () => {
     });
 
     test('displays loading state during deletion', async () => {
-      global.fetch.mockImplementationOnce(() => 
+      global.fetch.mockImplementationOnce(() =>
         new Promise((resolve) => setTimeout(() => resolve({
           ok: true,
           json: async () => ({ message: 'Deleted' })
@@ -320,7 +333,7 @@ describe('SubscriptionList Component', () => {
     });
 
     test('disables buttons during deletion', async () => {
-      global.fetch.mockImplementationOnce(() => 
+      global.fetch.mockImplementationOnce(() =>
         new Promise((resolve) => setTimeout(() => resolve({
           ok: true,
           json: async () => ({ message: 'Deleted' })
@@ -398,7 +411,7 @@ describe('SubscriptionList Component', () => {
 
       // Table headers should still be present
       expect(screen.getByText('Name')).toBeInTheDocument();
-      
+
       // But no subscription data
       expect(screen.queryByText('Netflix')).not.toBeInTheDocument();
     });
