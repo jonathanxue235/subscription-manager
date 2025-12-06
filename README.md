@@ -64,7 +64,7 @@ Stores subscription details for each user.
 
 - Many-to-One with users table (ON DELETE CASCADE - deleting a user removes all their subscriptions)
 
-# How to test our app (SPECIFICALLY FOR TESTING - THE FULL LOCAL SETUP IS BELOW)
+## How to test our app (SPECIFICALLY FOR TESTING - THE FULL LOCAL SETUP IS BELOW)
 
 ### Prerequisites
 
@@ -82,9 +82,12 @@ cd subscription-manager
 
 - Add the respective .env files in the correct folder
 
-### 3. Run setup shellscript
+### 3. Run setup script
+
+This script installs dependencies for both frontend and backend, creates .env files, and optionally starts the servers.
 
 ```bash
+chmod +x setup.sh  # Make script executable
 ./setup.sh
 ```
 
@@ -167,4 +170,3 @@ npm start
 The frontend will run on http://localhost:3000
 
 The backend will run on http://localhost:5001 (or your configured PORT)
-
